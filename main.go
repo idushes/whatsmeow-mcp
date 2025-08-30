@@ -26,7 +26,7 @@ type Config struct {
 // loadConfig loads configuration from environment variables
 func loadConfig() *Config {
 	// Try to load .env file, ignore error if it doesn't exist
-	_ = godotenv.Load("config.env")
+	_ = godotenv.Load(".env")
 
 	config := &Config{
 		Port:          3000,
