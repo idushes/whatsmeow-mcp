@@ -15,6 +15,72 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 **Planned:** 38 (100%)  
 **Blocked:** 0 (0%)
 
+## Quick Tool Index
+
+### Connection and Authentication Tools (7 tools)
+- [`connect`](#connect-) ⏳ - Establishes connection to WhatsApp servers
+- [`disconnect`](#disconnect-) ⏳ - Disconnects from WhatsApp servers
+- [`get_qr_code`](#get_qr_code-) ⏳ - Generates QR code for WhatsApp Web login
+- [`pair_phone`](#pair_phone-) ⏳ - Pair device using phone number
+- [`logout`](#logout-) ⏳ - Logout from WhatsApp account
+- [`is_connected`](#is_connected-) ⏳ - Check if client is connected to WhatsApp servers
+- [`is_logged_in`](#is_logged_in-) ⏳ - Check if user is authenticated
+
+### Message Sending Tools (9 tools)
+- [`send_message`](#send_message-) ⏳ - Send text message to chat or contact
+- [`send_image_message`](#send_image_message-) ⏳ - Send image with optional caption
+- [`send_document_message`](#send_document_message-) ⏳ - Send document/file
+- [`send_audio_message`](#send_audio_message-) ⏳ - Send audio message
+- [`send_video_message`](#send_video_message-) ⏳ - Send video message
+- [`build_poll_creation`](#build_poll_creation-) ⏳ - Create a poll message
+- [`build_poll_vote`](#build_poll_vote-) ⏳ - Vote in a poll
+- [`build_reaction`](#build_reaction-) ⏳ - Add reaction to a message
+- [`build_edit`](#build_edit-) ⏳ - Edit a previously sent message
+- [`build_revoke`](#build_revoke-) ⏳ - Revoke/delete a sent message
+
+### Group Management Tools (8 tools)
+- [`create_group`](#create_group-) ⏳ - Create new WhatsApp group
+- [`get_group_info`](#get_group_info-) ⏳ - Get detailed group information
+- [`join_group_with_link`](#join_group_with_link-) ⏳ - Join group using invite link
+- [`join_group_with_invite`](#join_group_with_invite-) ⏳ - Join group using invite message
+- [`leave_group`](#leave_group-) ⏳ - Leave a group
+- [`set_group_name`](#set_group_name-) ⏳ - Change group name
+- [`set_group_description`](#set_group_description-) ⏳ - Change group description
+- [`set_group_photo`](#set_group_photo-) ⏳ - Set group profile photo
+- [`update_group_participants`](#update_group_participants-) ⏳ - Add or remove group participants
+
+### Contact and User Information Tools (5 tools)
+- [`get_user_info`](#get_user_info-) ⏳ - Get user information including avatar, status, and verification
+- [`get_user_devices`](#get_user_devices-) ⏳ - Get list of user's devices
+- [`is_on_whatsapp`](#is_on_whatsapp-) ⏳ - Check if phone numbers are registered on WhatsApp
+- [`get_profile_picture_info`](#get_profile_picture_info-) ⏳ - Get profile picture information
+- [`get_business_profile`](#get_business_profile-) ⏳ - Get business profile information
+
+### Presence and Status Tools (3 tools)
+- [`send_presence`](#send_presence-) ⏳ - Set global presence status
+- [`subscribe_presence`](#subscribe_presence-) ⏳ - Subscribe to user's presence updates
+- [`send_chat_presence`](#send_chat_presence-) ⏳ - Send typing or recording status to specific chat
+
+### Media Tools (2 tools)
+- [`download`](#download-) ⏳ - Download media from message
+- [`upload`](#upload-) ⏳ - Upload media file to WhatsApp servers
+
+### Message Management Tools (2 tools)
+- [`mark_read`](#mark_read-) ⏳ - Mark messages as read
+- [`get_chat_history`](#get_chat_history-) ⏳ - Get chat message history
+
+### Privacy and Settings Tools (2 tools)
+- [`get_privacy_settings`](#get_privacy_settings-) ⏳ - Get current privacy settings
+- [`get_blocklist`](#get_blocklist-) ⏳ - Get list of blocked contacts
+
+### Utility Tools (2 tools)
+- [`generate_message_id`](#generate_message_id-) ⏳ - Generate unique message ID
+- [`parse_jid`](#parse_jid-) ⏳ - Parse and validate JID format
+
+---
+
+## Detailed Tool Descriptions
+
 ## Connection and Authentication Tools
 
 ### `connect` ⏳
