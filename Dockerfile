@@ -20,6 +20,9 @@ RUN go mod verify
 # Copy source code
 COPY . .
 
+# Ensure static directory exists
+RUN mkdir -p static
+
 # Build the binary
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags='-w -s -extldflags "-static"' \
@@ -44,7 +47,7 @@ COPY --from=builder /build/whatsmeow-mcp /whatsmeow-mcp
 # Copy migrations
 COPY --from=builder /build/migrations /migrations
 
-# Copy static files if needed
+# Copy static files
 COPY --from=builder /build/static /static
 
 # Use non-root user
