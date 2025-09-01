@@ -30,10 +30,15 @@ func RegisterAllTools(mcpServer *server.MCPServer, whatsappClient client.WhatsAp
 	getChatHistoryTool := GetChatHistoryTool(whatsappClient)
 	mcpServer.AddTool(getChatHistoryTool, HandleGetChatHistory(whatsappClient))
 
-	log.Println("Successfully registered 5 WhatsApp MCP tools:")
+	// Register get_unread_messages tool
+	getUnreadMessagesTool := GetUnreadMessagesTool(whatsappClient)
+	mcpServer.AddTool(getUnreadMessagesTool, HandleGetUnreadMessages(whatsappClient))
+
+	log.Println("Successfully registered 6 WhatsApp MCP tools:")
 	log.Println("  - is_logged_in: Check authentication status")
 	log.Println("  - get_qr_code: Generate QR code for login")
 	log.Println("  - send_message: Send text messages")
 	log.Println("  - is_on_whatsapp: Check phone number registration")
 	log.Println("  - get_chat_history: Retrieve chat message history")
+	log.Println("  - get_unread_messages: Retrieve unread messages")
 }

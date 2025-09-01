@@ -18,3 +18,9 @@ type GetChatHistoryParams struct {
 	Count           int    `json:"count,omitempty" description:"Maximum number of messages to retrieve (default: 50, max: 100)"`
 	BeforeMessageID string `json:"before_message_id,omitempty" description:"Optional message ID to retrieve messages before this point (for pagination)"`
 }
+
+// GetUnreadMessagesParams represents parameters for retrieving unread messages
+type GetUnreadMessagesParams struct {
+	Chat  string `json:"chat,omitempty" description:"Optional WhatsApp JID to filter unread messages from a specific chat. If omitted, returns unread messages from all chats"`
+	Count int    `json:"count,omitempty" description:"Maximum number of unread messages to retrieve (default: 50, max: 100)"`
+}

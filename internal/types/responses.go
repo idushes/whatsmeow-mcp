@@ -72,3 +72,11 @@ type ChatHistoryResponse struct {
 	Chat     string    `json:"chat"`
 	Count    int       `json:"count"`
 }
+
+// UnreadMessagesResponse represents the response for unread messages retrieval
+type UnreadMessagesResponse struct {
+	Messages []Message `json:"messages"`
+	Success  bool      `json:"success"`
+	Chat     string    `json:"chat,omitempty"`
+	Count    int       `json:"count"`
+}

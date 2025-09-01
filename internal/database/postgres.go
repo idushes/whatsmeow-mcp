@@ -327,3 +327,78 @@ func (ms *MessageStore) MarkMessagesAsRead(ctx context.Context, ourJID, chatJID 
 
 	return nil
 }
+
+// GetUnreadMessages retrieves unread messages with optional chat filter
+func (ms *MessageStore) GetUnreadMessages(ctx context.Context, ourJID string, chatJID string, count int) ([]types.Message, error) {
+	var query string
+	var args []interface{}
+
+	if chatJID != "" {
+		// Get unread messages from a specific chat
+		query = `
+			SELECT id, sender_jid, recipient_jid, message_text, timestamp, quoted_message_id, chat_jid
+			FROM messages 
+			WHERE our_jid = $1 AND chat_jid = $2 AND is_read = false
+			ORDER BY timestamp DESC 
+			LIMIT $3
+		`
+		args = []interface{}{ourJID, chatJID, count}
+	} else {
+		// Get unread messages from all chats
+		query = `
+			SELECT id, sender_jid, recipient_jid, message_text, timestamp, quoted_message_id, chat_jid
+			FROM messages 
+			WHERE our_jid = $1 AND is_read = false
+			ORDER BY timestamp DESC 
+			LIMIT $2
+		`
+		args = []interface{}{ourJID, count}
+	}
+
+	rows, err := ms.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query unread messages: %w", err)
+	}
+	defer rows.Close()
+
+	var messages []types.Message
+	for rows.Next() {
+		var msg types.Message
+		var recipientJID sql.NullString
+		var quotedMessageID sql.NullString
+
+		err := rows.Scan(
+			&msg.ID,
+			&msg.From,
+			&recipientJID,
+			&msg.Text,
+			&msg.Timestamp,
+			&quotedMessageID,
+			&msg.Chat,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan unread message: %w", err)
+		}
+
+		if recipientJID.Valid {
+			msg.To = recipientJID.String
+		}
+		if quotedMessageID.Valid {
+			msg.QuotedMessageID = quotedMessageID.String
+		}
+
+		messages = append(messages, msg)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating unread messages: %w", err)
+	}
+
+	// Reverse the slice to get chronological order (oldest first)
+	for i := len(messages)/2 - 1; i >= 0; i-- {
+		opp := len(messages) - 1 - i
+		messages[i], messages[opp] = messages[opp], messages[i]
+	}
+
+	return messages, nil
+}

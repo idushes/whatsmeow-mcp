@@ -12,6 +12,7 @@ type WhatsAppClientInterface interface {
 	// Message methods
 	SendMessage(to, text, quotedMessageID string) (*types.MessageResponse, error)
 	GetChatMessages(chatJID string, count int, beforeMessageID string) []types.Message
+	GetUnreadMessages(chatJID string, count int) []types.Message
 	GetAllMessages() []types.Message
 	AddMessage(message types.Message)
 

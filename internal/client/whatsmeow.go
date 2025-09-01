@@ -350,6 +350,24 @@ func (wc *WhatsmeowClient) GetChatMessages(chatJID string, count int, beforeMess
 	return chatMessages
 }
 
+// GetUnreadMessages returns unread messages from database
+func (wc *WhatsmeowClient) GetUnreadMessages(chatJID string, count int) []types.Message {
+	if wc.ourJID == "" {
+		return []types.Message{}
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	unreadMessages, err := wc.messageStore.GetUnreadMessages(ctx, wc.ourJID, chatJID, count)
+	if err != nil {
+		log.Printf("Failed to get unread messages from database: %v", err)
+		return []types.Message{}
+	}
+
+	return unreadMessages
+}
+
 // GetAllMessages returns all messages from database
 func (wc *WhatsmeowClient) GetAllMessages() []types.Message {
 	if wc.ourJID == "" {
