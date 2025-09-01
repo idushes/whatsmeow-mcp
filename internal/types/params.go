@@ -18,8 +18,3 @@ type GetChatHistoryParams struct {
 	Count           int    `json:"count,omitempty" description:"Maximum number of messages to retrieve (default: 50, max: 100)"`
 	BeforeMessageID string `json:"before_message_id,omitempty" description:"Optional message ID to retrieve messages before this point (for pagination)"`
 }
-
-// DummyParams represents a placeholder parameter for tools that don't need parameters
-type DummyParams struct {
-	RandomString string `json:"random_string" description:"Dummy parameter for no-parameter tools"`
-}

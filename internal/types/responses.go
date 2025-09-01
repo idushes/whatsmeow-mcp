@@ -22,10 +22,12 @@ type LoginStatusResponse struct {
 
 // QRCodeResponse represents the response for QR code generation
 type QRCodeResponse struct {
-	QRCode  string `json:"qr_code"`
-	Code    string `json:"code"`
-	Timeout int    `json:"timeout"`
-	Success bool   `json:"success"`
+	QRCode    string `json:"qr_code"`    // Raw QR code string
+	Code      string `json:"code"`       // Same as qr_code (for compatibility)
+	ImageURL  string `json:"image_url"`  // URL to QR code image
+	Timeout   int    `json:"timeout"`    // Timeout in seconds
+	Success   bool   `json:"success"`    // Success status
+	ExpiresAt int64  `json:"expires_at"` // Unix timestamp when QR expires
 }
 
 // MessageResponse represents the response for message sending

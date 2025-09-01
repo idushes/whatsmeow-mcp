@@ -3,31 +3,32 @@ package tools
 import (
 	"log"
 	"whatsmeow-mcp/internal/client"
+	"whatsmeow-mcp/internal/qrcode"
 
 	"github.com/mark3labs/mcp-go/server"
 )
 
 // RegisterAllTools registers all available WhatsApp MCP tools with the server
-func RegisterAllTools(mcpServer *server.MCPServer, client *client.WhatsAppClient) {
+func RegisterAllTools(mcpServer *server.MCPServer, whatsappClient client.WhatsAppClientInterface, qrGenerator *qrcode.QRCodeGenerator) {
 	// Register is_logged_in tool
-	isLoggedInTool := IsLoggedInTool(client)
-	mcpServer.AddTool(isLoggedInTool, HandleIsLoggedIn(client))
+	isLoggedInTool := IsLoggedInTool(whatsappClient)
+	mcpServer.AddTool(isLoggedInTool, HandleIsLoggedIn(whatsappClient))
 
 	// Register get_qr_code tool
-	getQRCodeTool := GetQRCodeTool(client)
-	mcpServer.AddTool(getQRCodeTool, HandleGetQRCode(client))
+	getQRCodeTool := GetQRCodeTool(whatsappClient)
+	mcpServer.AddTool(getQRCodeTool, HandleGetQRCode(whatsappClient, qrGenerator))
 
 	// Register send_message tool
-	sendMessageTool := SendMessageTool(client)
-	mcpServer.AddTool(sendMessageTool, HandleSendMessage(client))
+	sendMessageTool := SendMessageTool(whatsappClient)
+	mcpServer.AddTool(sendMessageTool, HandleSendMessage(whatsappClient))
 
 	// Register is_on_whatsapp tool
-	isOnWhatsappTool := IsOnWhatsappTool(client)
-	mcpServer.AddTool(isOnWhatsappTool, HandleIsOnWhatsapp(client))
+	isOnWhatsappTool := IsOnWhatsappTool(whatsappClient)
+	mcpServer.AddTool(isOnWhatsappTool, HandleIsOnWhatsapp(whatsappClient))
 
 	// Register get_chat_history tool
-	getChatHistoryTool := GetChatHistoryTool(client)
-	mcpServer.AddTool(getChatHistoryTool, HandleGetChatHistory(client))
+	getChatHistoryTool := GetChatHistoryTool(whatsappClient)
+	mcpServer.AddTool(getChatHistoryTool, HandleGetChatHistory(whatsappClient))
 
 	log.Println("Successfully registered 5 WhatsApp MCP tools:")
 	log.Println("  - is_logged_in: Check authentication status")

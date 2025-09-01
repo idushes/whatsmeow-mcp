@@ -103,7 +103,7 @@ Configure in Cline settings:
 
 **Purpose:** Check WhatsApp authentication status and session validity  
 **Use Case:** Verify if the client is authenticated before performing operations that require login  
-**Parameters:** None (uses dummy parameter for MCP compatibility)
+**Parameters:** None
 
 **Response:**
 ```json
@@ -121,7 +121,7 @@ Configure in Cline settings:
 
 **Purpose:** Generate QR code for WhatsApp Web authentication  
 **Use Case:** Initial authentication setup - user scans QR code with mobile WhatsApp app  
-**Parameters:** None (uses dummy parameter for MCP compatibility)  
+**Parameters:** None  
 **Important:** QR codes expire after 30 seconds and auto-refresh
 
 **Response:**
@@ -129,12 +129,14 @@ Configure in Cline settings:
 {
   "qr_code": "2@ABC123DEF456...",
   "code": "2@ABC123DEF456...", 
+  "image_url": "http://localhost:6679/static/qr_1234567890_abcd1234.png",
   "timeout": 30,
-  "success": true
+  "success": true,
+  "expires_at": 1234567920
 }
 ```
 
-**AI Agent Notes:** Present QR code to user for scanning. Inform about 30-second expiration. May need to call multiple times if code expires.
+**AI Agent Notes:** Use the `image_url` to display QR code image directly to users. The image is automatically generated and hosted by the server. QR codes expire after 30 seconds (check `expires_at` timestamp). Image files are automatically cleaned up after 5 minutes.
 
 ---
 

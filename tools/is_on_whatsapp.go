@@ -10,7 +10,7 @@ import (
 )
 
 // IsOnWhatsappTool creates and returns the is_on_whatsapp MCP tool
-func IsOnWhatsappTool(client *client.WhatsAppClient) mcp.Tool {
+func IsOnWhatsappTool(whatsappClient client.WhatsAppClientInterface) mcp.Tool {
 	tool := mcp.NewTool("is_on_whatsapp",
 		mcp.WithDescription("Check if phone numbers are registered on WhatsApp. Takes an array of phone numbers in international format and returns their WhatsApp registration status along with their JIDs (WhatsApp identifiers)."),
 		mcp.WithInputSchema[types.IsOnWhatsappParams](),
@@ -20,7 +20,7 @@ func IsOnWhatsappTool(client *client.WhatsAppClient) mcp.Tool {
 }
 
 // HandleIsOnWhatsapp handles the is_on_whatsapp tool execution
-func HandleIsOnWhatsapp(client *client.WhatsAppClient) func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func HandleIsOnWhatsapp(whatsappClient client.WhatsAppClientInterface) func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		var params types.IsOnWhatsappParams
 		argumentsBytes, _ := json.Marshal(request.Params.Arguments)
@@ -58,16 +58,23 @@ func HandleIsOnWhatsapp(client *client.WhatsAppClient) func(ctx context.Context,
 			}, nil
 		}
 
-		results := make([]types.WhatsAppCheckResult, 0, len(params.Phones))
-		for _, phone := range params.Phones {
-			// Check phone number registration status
-			isRegistered := len(phone) > 10 && phone[len(phone)-1] != '0'
-
-			results = append(results, types.WhatsAppCheckResult{
-				Phone:        phone,
-				IsOnWhatsApp: isRegistered,
-				JID:          phone + "@s.whatsapp.net",
-			})
+		// Use client interface to check phone numbers
+		results, err := whatsappClient.IsOnWhatsApp(params.Phones)
+		if err != nil {
+			result := types.StandardResponse{
+				Success: false,
+				Error: &types.ErrorInfo{
+					Code:    "CHECK_FAILED",
+					Message: "Failed to check WhatsApp registration status",
+					Details: err.Error(),
+				},
+			}
+			content, _ := json.Marshal(result)
+			return &mcp.CallToolResult{
+				Content: []mcp.Content{
+					mcp.NewTextContent(string(content)),
+				},
+			}, nil
 		}
 
 		result := types.WhatsAppCheckResponse{

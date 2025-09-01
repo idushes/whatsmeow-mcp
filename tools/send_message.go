@@ -3,8 +3,6 @@ package tools
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"time"
 	"whatsmeow-mcp/internal/client"
 	"whatsmeow-mcp/internal/types"
 
@@ -12,7 +10,7 @@ import (
 )
 
 // SendMessageTool creates and returns the send_message MCP tool
-func SendMessageTool(client *client.WhatsAppClient) mcp.Tool {
+func SendMessageTool(whatsappClient client.WhatsAppClientInterface) mcp.Tool {
 	tool := mcp.NewTool("send_message",
 		mcp.WithDescription("Send text message to chat or contact. Requires authentication (user must be logged in). Can optionally reply to/quote a previous message by providing quoted_message_id parameter."),
 		mcp.WithInputSchema[types.SendMessageParams](),
@@ -22,7 +20,7 @@ func SendMessageTool(client *client.WhatsAppClient) mcp.Tool {
 }
 
 // HandleSendMessage handles the send_message tool execution
-func HandleSendMessage(client *client.WhatsAppClient) func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func HandleSendMessage(whatsappClient client.WhatsAppClientInterface) func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		var params types.SendMessageParams
 		argumentsBytes, _ := json.Marshal(request.Params.Arguments)
@@ -44,7 +42,7 @@ func HandleSendMessage(client *client.WhatsAppClient) func(ctx context.Context, 
 		}
 
 		// Check if user is authenticated
-		if !client.IsLoggedIn() {
+		if !whatsappClient.IsLoggedIn() {
 			result := types.StandardResponse{
 				Success: false,
 				Error: &types.ErrorInfo{
@@ -77,30 +75,26 @@ func HandleSendMessage(client *client.WhatsAppClient) func(ctx context.Context, 
 			}, nil
 		}
 
-		// Send message
-		messageId := fmt.Sprintf("msg_%d", time.Now().Unix())
-		timestamp := time.Now().Unix()
-
-		result := types.MessageResponse{
-			MessageID:       messageId,
-			Timestamp:       timestamp,
-			Success:         true,
-			To:              params.To,
-			Text:            params.Text,
-			QuotedMessageID: params.QuotedMessageID,
+		// Send message using client interface
+		response, err := whatsappClient.SendMessage(params.To, params.Text, params.QuotedMessageID)
+		if err != nil {
+			result := types.StandardResponse{
+				Success: false,
+				Error: &types.ErrorInfo{
+					Code:    "SEND_FAILED",
+					Message: "Failed to send message",
+					Details: err.Error(),
+				},
+			}
+			content, _ := json.Marshal(result)
+			return &mcp.CallToolResult{
+				Content: []mcp.Content{
+					mcp.NewTextContent(string(content)),
+				},
+			}, nil
 		}
 
-		// Add message to client history
-		newMessage := types.Message{
-			ID:              messageId,
-			From:            "self",
-			To:              params.To,
-			Text:            params.Text,
-			Timestamp:       timestamp,
-			Chat:            params.To,
-			QuotedMessageID: params.QuotedMessageID,
-		}
-		client.AddMessage(newMessage)
+		result := response
 
 		content, err := json.Marshal(result)
 		if err != nil {

@@ -10,20 +10,19 @@ import (
 )
 
 // IsLoggedInTool creates and returns the is_logged_in MCP tool
-func IsLoggedInTool(client *client.WhatsAppClient) mcp.Tool {
+func IsLoggedInTool(whatsappClient client.WhatsAppClientInterface) mcp.Tool {
 	tool := mcp.NewTool("is_logged_in",
 		mcp.WithDescription("Check if user is authenticated with WhatsApp. Returns the current login status of the WhatsApp client session."),
-		mcp.WithInputSchema[types.DummyParams](),
 	)
 
 	return tool
 }
 
 // HandleIsLoggedIn handles the is_logged_in tool execution
-func HandleIsLoggedIn(client *client.WhatsAppClient) func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func HandleIsLoggedIn(whatsappClient client.WhatsAppClientInterface) func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		result := types.LoginStatusResponse{
-			LoggedIn: client.IsLoggedIn(),
+			LoggedIn: whatsappClient.IsLoggedIn(),
 			Success:  true,
 		}
 

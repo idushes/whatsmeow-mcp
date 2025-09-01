@@ -1,16 +1,20 @@
 package client
 
 import (
+	"fmt"
 	"time"
 	"whatsmeow-mcp/internal/types"
 )
 
-// WhatsAppClient manages WhatsApp client state and operations
+// WhatsAppClient manages WhatsApp client state and operations (mock implementation)
 type WhatsAppClient struct {
 	isLoggedIn bool
 	qrCode     string
 	messages   []types.Message
 }
+
+// Ensure WhatsAppClient implements WhatsAppClientInterface
+var _ WhatsAppClientInterface = (*WhatsAppClient)(nil)
 
 // NewWhatsAppClient creates a new WhatsApp client instance
 func NewWhatsAppClient() *WhatsAppClient {
@@ -84,4 +88,54 @@ func (c *WhatsAppClient) GetChatMessages(chatJID string, count int, beforeMessag
 // GetAllMessages returns all messages in the client
 func (c *WhatsAppClient) GetAllMessages() []types.Message {
 	return c.messages
+}
+
+// Connect establishes connection (mock implementation)
+func (c *WhatsAppClient) Connect() error {
+	return nil // Mock always succeeds
+}
+
+// SendMessage sends a message (mock implementation)
+func (c *WhatsAppClient) SendMessage(to, text, quotedMessageID string) (*types.MessageResponse, error) {
+	messageId := fmt.Sprintf("msg_%d", time.Now().Unix())
+	timestamp := time.Now().Unix()
+
+	response := &types.MessageResponse{
+		MessageID:       messageId,
+		Timestamp:       timestamp,
+		Success:         true,
+		To:              to,
+		Text:            text,
+		QuotedMessageID: quotedMessageID,
+	}
+
+	// Add message to history
+	newMessage := types.Message{
+		ID:              messageId,
+		From:            "self",
+		To:              to,
+		Text:            text,
+		Timestamp:       timestamp,
+		Chat:            to,
+		QuotedMessageID: quotedMessageID,
+	}
+	c.AddMessage(newMessage)
+
+	return response, nil
+}
+
+// IsOnWhatsApp checks phone numbers (mock implementation)
+func (c *WhatsAppClient) IsOnWhatsApp(phones []string) ([]types.WhatsAppCheckResult, error) {
+	results := make([]types.WhatsAppCheckResult, 0, len(phones))
+	for _, phone := range phones {
+		// Check phone number registration status
+		isRegistered := len(phone) > 10 && phone[len(phone)-1] != '0'
+
+		results = append(results, types.WhatsAppCheckResult{
+			Phone:        phone,
+			IsOnWhatsApp: isRegistered,
+			JID:          phone + "@s.whatsapp.net",
+		})
+	}
+	return results, nil
 }

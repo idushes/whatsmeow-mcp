@@ -10,7 +10,7 @@ import (
 )
 
 // GetChatHistoryTool creates and returns the get_chat_history MCP tool
-func GetChatHistoryTool(client *client.WhatsAppClient) mcp.Tool {
+func GetChatHistoryTool(whatsappClient client.WhatsAppClientInterface) mcp.Tool {
 	tool := mcp.NewTool("get_chat_history",
 		mcp.WithDescription("Get chat message history for a specific conversation. Retrieves messages from a chat identified by its JID (WhatsApp identifier). Supports pagination using count and before_message_id parameters."),
 		mcp.WithInputSchema[types.GetChatHistoryParams](),
@@ -20,7 +20,7 @@ func GetChatHistoryTool(client *client.WhatsAppClient) mcp.Tool {
 }
 
 // HandleGetChatHistory handles the get_chat_history tool execution
-func HandleGetChatHistory(client *client.WhatsAppClient) func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func HandleGetChatHistory(whatsappClient client.WhatsAppClientInterface) func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		var params types.GetChatHistoryParams
 		argumentsBytes, _ := json.Marshal(request.Params.Arguments)
@@ -69,8 +69,8 @@ func HandleGetChatHistory(client *client.WhatsAppClient) func(ctx context.Contex
 		}
 
 		// Retrieve messages for the specific chat
-		chatMessages := client.GetChatMessages(params.Chat, params.Count, params.BeforeMessageID)
-		allMessages := client.GetAllMessages()
+		chatMessages := whatsappClient.GetChatMessages(params.Chat, params.Count, params.BeforeMessageID)
+		allMessages := whatsappClient.GetAllMessages()
 
 		// Check if there are more messages available
 		hasMore := false
