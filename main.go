@@ -110,12 +110,6 @@ func main() {
 	}
 	defer db.Close()
 
-	// Run migrations (disabled for whatsmeow compatibility)
-	// migrationsPath := filepath.Join(".", "migrations")
-	// if err := database.RunMigrations(db, migrationsPath); err != nil {
-	// 	log.Printf("Warning: Failed to run migrations: %v", err)
-	// }
-
 	// Initialize QR code generator
 	staticDir := filepath.Join(".", "static")
 	baseURL := fmt.Sprintf("http://%s:%d", config.Host, config.Port+1)
@@ -124,12 +118,18 @@ func main() {
 	// Start periodic cleanup of expired QR codes (every 10 minutes, remove files older than 30 minutes)
 	qrGenerator.StartPeriodicCleanup(10*time.Minute, 30*time.Minute)
 
-	// Initialize WhatsApp client
+	// Initialize WhatsApp client (this will create whatsmeow tables)
 	whatsappClient, err := client.NewWhatsmeowClient(db)
 	if err != nil {
 		log.Fatalf("Failed to initialize WhatsApp client: %v", err)
 	}
 	log.Println("WhatsApp client initialized successfully")
+
+	// Run our custom migrations after whatsmeow has created its tables
+	migrationsPath := filepath.Join(".", "migrations")
+	if err := database.RunMigrations(db, migrationsPath); err != nil {
+		log.Printf("Warning: Failed to run migrations: %v", err)
+	}
 	log.Println("Database connection established and migrations completed")
 
 	// Create MCP server with enhanced description

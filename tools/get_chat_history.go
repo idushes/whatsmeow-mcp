@@ -70,17 +70,10 @@ func HandleGetChatHistory(whatsappClient client.WhatsAppClientInterface) func(ct
 
 		// Retrieve messages for the specific chat
 		chatMessages := whatsappClient.GetChatMessages(params.Chat, params.Count, params.BeforeMessageID)
-		allMessages := whatsappClient.GetAllMessages()
 
-		// Check if there are more messages available
-		hasMore := false
-		totalChatMessages := 0
-		for _, msg := range allMessages {
-			if msg.Chat == params.Chat {
-				totalChatMessages++
-			}
-		}
-		hasMore = totalChatMessages > len(chatMessages)
+		// For now, we'll determine hasMore by checking if we got the full requested count
+		// In a more sophisticated implementation, we could add a method to get total count
+		hasMore := len(chatMessages) == params.Count
 
 		result := types.ChatHistoryResponse{
 			Messages: chatMessages,
