@@ -143,6 +143,12 @@ func (ms *MessageStore) SaveMessage(ctx context.Context, msg types.Message, ourJ
 			updated_at = NOW()
 	`
 
+	// Определяем, прочитано ли сообщение:
+	// - Исходящие сообщения (от нас) считаются прочитанными
+	// - Входящие сообщения (от других) изначально непрочитанные
+	isFromMe := msg.From == "self"
+	isRead := isFromMe // Только наши сообщения считаются прочитанными
+
 	_, err := ms.db.ExecContext(ctx, query,
 		msg.ID,
 		ourJID,
@@ -153,8 +159,8 @@ func (ms *MessageStore) SaveMessage(ctx context.Context, msg types.Message, ourJ
 		msg.Timestamp,
 		"text", // message_type - можем расширить позже для других типов
 		msg.QuotedMessageID,
-		msg.From == "self", // is_from_me
-		true,               // is_read - по умолчанию считаем прочитанным
+		isFromMe, // is_from_me
+		isRead,   // is_read - входящие сообщения непрочитанные, исходящие прочитанные
 	)
 
 	return err

@@ -108,6 +108,8 @@ func (wc *WhatsmeowClient) setupEventHandlers() {
 		switch v := evt.(type) {
 		case *events.Message:
 			wc.handleMessage(v)
+		case *events.Receipt:
+			wc.handleReceipt(v)
 		case *events.QR:
 			wc.handleQR(v)
 		case *events.Connected:
@@ -174,6 +176,74 @@ func (wc *WhatsmeowClient) handleMessage(evt *events.Message) {
 	}
 
 	log.Printf("Received message from %s: %s", message.From, message.Text)
+}
+
+// handleReceipt processes delivery and read receipts
+func (wc *WhatsmeowClient) handleReceipt(evt *events.Receipt) {
+	if wc.ourJID == "" {
+		return
+	}
+
+	// Обрабатываем различные типы receipt
+	switch evt.Type {
+	case events.ReceiptTypeDelivered:
+		log.Printf("Message %s delivered to %s", evt.MessageIDs[0], evt.SourceString())
+		// Обновляем статус доставки сообщений в базе данных
+		wc.updateMessageDeliveryStatus(evt.MessageIDs, true)
+	case events.ReceiptTypeRead:
+		log.Printf("Message %s read by %s", evt.MessageIDs[0], evt.SourceString())
+		// Обновляем статус прочтения сообщений в базе данных
+		wc.updateMessageReadStatus(evt.MessageIDs, evt.Chat.String(), true)
+	case events.ReceiptTypeReadSelf:
+		log.Printf("Message %s read by us on another device", evt.MessageIDs[0])
+		// Это событие означает, что мы прочитали сообщение на другом устройстве
+		// Обновляем статус прочтения в базе данных
+		wc.updateMessageReadStatus(evt.MessageIDs, evt.Chat.String(), true)
+	default:
+		log.Printf("Unknown receipt type: %v for messages %v", evt.Type, evt.MessageIDs)
+	}
+}
+
+// updateMessageReadStatus updates the read status of messages in the database
+func (wc *WhatsmeowClient) updateMessageReadStatus(messageIDs []string, chatJID string, isRead bool) {
+	if len(messageIDs) == 0 {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Обновляем статус прочтения для указанных сообщений
+	for _, messageID := range messageIDs {
+		query := `UPDATE messages SET is_read = $1, updated_at = NOW() WHERE id = $2 AND our_jid = $3`
+		_, err := wc.messageStore.GetDB().ExecContext(ctx, query, isRead, messageID, wc.ourJID)
+		if err != nil {
+			log.Printf("Failed to update read status for message %s: %v", messageID, err)
+		} else {
+			log.Printf("Updated read status for message %s to %v", messageID, isRead)
+		}
+	}
+}
+
+// updateMessageDeliveryStatus updates the delivery status of messages in the database
+func (wc *WhatsmeowClient) updateMessageDeliveryStatus(messageIDs []string, isDelivered bool) {
+	if len(messageIDs) == 0 {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Обновляем статус доставки для указанных сообщений
+	for _, messageID := range messageIDs {
+		query := `UPDATE messages SET is_delivered = $1, updated_at = NOW() WHERE id = $2 AND our_jid = $3`
+		_, err := wc.messageStore.GetDB().ExecContext(ctx, query, isDelivered, messageID, wc.ourJID)
+		if err != nil {
+			log.Printf("Failed to update delivery status for message %s: %v", messageID, err)
+		} else {
+			log.Printf("Updated delivery status for message %s to %v", messageID, isDelivered)
+		}
+	}
 }
 
 // handleQR processes QR code events
