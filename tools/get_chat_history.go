@@ -12,8 +12,17 @@ import (
 // GetChatHistoryTool creates and returns the get_chat_history MCP tool
 func GetChatHistoryTool(whatsappClient client.WhatsAppClientInterface) mcp.Tool {
 	tool := mcp.NewTool("get_chat_history",
-		mcp.WithDescription("Get chat message history for a specific conversation. Retrieves messages from a chat identified by its JID (WhatsApp identifier). Supports pagination using count and before_message_id parameters."),
-		mcp.WithInputSchema[types.GetChatHistoryParams](),
+		mcp.WithDescription("Retrieve message history from a WhatsApp conversation with pagination support."),
+		mcp.WithString("chat",
+			mcp.Required(),
+			mcp.Description("WhatsApp JID (chat identifier) to retrieve messages from"),
+		),
+		mcp.WithNumber("count",
+			mcp.Description("Maximum number of messages to retrieve (default: 50, max: 100)"),
+		),
+		mcp.WithString("before_message_id",
+			mcp.Description("Optional message ID to retrieve messages before this point (for pagination)"),
+		),
 	)
 
 	return tool

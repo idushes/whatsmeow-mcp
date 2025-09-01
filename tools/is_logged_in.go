@@ -12,7 +12,7 @@ import (
 // IsLoggedInTool creates and returns the is_logged_in MCP tool
 func IsLoggedInTool(whatsappClient client.WhatsAppClientInterface) mcp.Tool {
 	tool := mcp.NewTool("is_logged_in",
-		mcp.WithDescription("Check if user is authenticated with WhatsApp. Returns the current login status of the WhatsApp client session."),
+		mcp.WithDescription("Check WhatsApp authentication status."),
 	)
 
 	return tool

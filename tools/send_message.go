@@ -12,8 +12,18 @@ import (
 // SendMessageTool creates and returns the send_message MCP tool
 func SendMessageTool(whatsappClient client.WhatsAppClientInterface) mcp.Tool {
 	tool := mcp.NewTool("send_message",
-		mcp.WithDescription("Send a text message to a WhatsApp chat or contact. Requires the user to be authenticated (logged in) first.\n\nParameters:\n- to: WhatsApp JID (recipient identifier) in format 'phonenumber@s.whatsapp.net' (e.g., '1234567890@s.whatsapp.net') or group JID ending with '@g.us'\n- text: The message content to send (plain text)\n- quoted_message_id: (Optional) ID of a previous message to reply to/quote\n\nExample usage:\n- Send to phone: to='1234567890@s.whatsapp.net', text='Hello!'\n- Reply to message: to='1234567890@s.whatsapp.net', text='Thanks!', quoted_message_id='msg_123'"),
-		mcp.WithInputSchema[types.SendMessageParams](),
+		mcp.WithDescription("Send a text message to a WhatsApp chat or contact. Requires authentication."),
+		mcp.WithString("to",
+			mcp.Required(),
+			mcp.Description("WhatsApp JID (recipient identifier) in format 'phonenumber@s.whatsapp.net' (e.g., '1234567890@s.whatsapp.net') or group JID ending with '@g.us'"),
+		),
+		mcp.WithString("text",
+			mcp.Required(),
+			mcp.Description("The message content to send (plain text)"),
+		),
+		mcp.WithString("quoted_message_id",
+			mcp.Description("Optional ID of a previous message to reply to/quote"),
+		),
 	)
 
 	return tool

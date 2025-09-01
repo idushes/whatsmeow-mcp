@@ -18,12 +18,12 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 ## Quick Tool Index
 
 ### Connection and Authentication Tools (3 tools)
-- [`get_qr_code`](#get_qr_code-) ✅ - Generates QR code for WhatsApp Web login
+- [`get_qr_code`](#get_qr_code-) ✅ - Generate QR code for WhatsApp Web authentication
 - [`logout`](#logout-) ⏳ - Logout from WhatsApp account
-- [`is_logged_in`](#is_logged_in-) ✅ - Check if user is authenticated
+- [`is_logged_in`](#is_logged_in-) ✅ - Check WhatsApp authentication status
 
 ### Message Sending Tools (10 tools)
-- [`send_message`](#send_message-) ✅ - Send text message to chat or contact
+- [`send_message`](#send_message-) ✅ - Send a text message to a WhatsApp chat or contact
 - [`send_image_message`](#send_image_message-) ⏳ - Send image with optional caption
 - [`send_document_message`](#send_document_message-) ⏳ - Send document/file
 - [`send_audio_message`](#send_audio_message-) ⏳ - Send audio message
@@ -49,7 +49,7 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 ### Contact and User Information Tools (6 tools)
 - [`get_user_info`](#get_user_info-) ⏳ - Get user information including avatar, status, and verification
 - [`get_user_devices`](#get_user_devices-) ⏳ - Get list of user's devices
-- [`is_on_whatsapp`](#is_on_whatsapp-) ✅ - Check if phone numbers are registered on WhatsApp
+- [`is_on_whatsapp`](#is_on_whatsapp-) ✅ - Check if phone numbers are registered on WhatsApp and get their JIDs
 - [`get_profile_picture_info`](#get_profile_picture_info-) ⏳ - Get profile picture information
 - [`get_business_profile`](#get_business_profile-) ⏳ - Get business profile information
 - [`get_contacts`](#get_contacts-) ⏳ - Get list of contacts
@@ -71,10 +71,10 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 
 ### Message Management Tools (2 tools)
 - [`mark_read`](#mark_read-) ⏳ - Mark messages as read
-- [`get_chat_history`](#get_chat_history-) ✅ - Get chat message history
+- [`get_chat_history`](#get_chat_history-) ✅ - Retrieve message history from a WhatsApp conversation with pagination support
 
 ### Notification Tools (1 tool)
-- [`get_unread_messages`](#get_unread_messages-) ✅ - Get unread messages from all chats
+- [`get_unread_messages`](#get_unread_messages-) ✅ - Retrieve unread messages from WhatsApp chats
 
 ### Privacy and Settings Tools (2 tools)
 - [`get_privacy_settings`](#get_privacy_settings-) ⏳ - Get current privacy settings
@@ -91,7 +91,7 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 
 ### `get_qr_code` ✅
 **Status:** Implemented  
-**Description:** Generates QR code for WhatsApp Web login  
+**Description:** Generate QR code for WhatsApp Web authentication  
 **Parameters:**
 - None
 
@@ -119,7 +119,7 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 
 ### `is_logged_in` ✅
 **Status:** Implemented  
-**Description:** Check if user is authenticated  
+**Description:** Check WhatsApp authentication status  
 **Parameters:**
 - None
 
@@ -131,7 +131,7 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 
 ### `send_message` ✅
 **Status:** Implemented  
-**Description:** Send text message to chat or contact  
+**Description:** Send a text message to a WhatsApp chat or contact. Requires authentication.  
 **Parameters:**
 - `to`: string - Recipient JID (e.g., "1234567890@s.whatsapp.net" for contact, "1234567890-1234567890@g.us" for group)
 - `text`: string - Message text content
@@ -401,7 +401,7 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 
 ### `is_on_whatsapp` ✅
 **Status:** Implemented  
-**Description:** Check if phone numbers are registered on WhatsApp  
+**Description:** Check if phone numbers are registered on WhatsApp and get their JIDs.  
 **Parameters:**
 - `phones`: array of strings - Phone numbers in international format
 
@@ -528,7 +528,7 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 
 ### `get_chat_history` ✅
 **Status:** Implemented  
-**Description:** Get chat message history  
+**Description:** Retrieve message history from a WhatsApp conversation with pagination support.  
 **Parameters:**
 - `chat`: string - Chat JID
 - `count`: number (optional) - Number of messages to retrieve (default: 50, max: 100)
@@ -564,7 +564,7 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 
 ### `get_unread_messages` ✅
 **Status:** Implemented  
-**Description:** Get unread messages from WhatsApp chats. Can retrieve unread messages from all chats or filter by specific chat. Returns messages that have not been marked as read in the database.  
+**Description:** Retrieve unread messages from WhatsApp chats.  
 **Parameters:**
 - `chat`: string (optional) - WhatsApp JID to filter unread messages from a specific chat. If omitted, returns unread messages from all chats
 - `count`: number (optional) - Maximum number of unread messages to retrieve (default: 50, max: 100)

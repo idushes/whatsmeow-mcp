@@ -12,8 +12,13 @@ import (
 // GetUnreadMessagesTool creates and returns the get_unread_messages MCP tool
 func GetUnreadMessagesTool(whatsappClient client.WhatsAppClientInterface) mcp.Tool {
 	tool := mcp.NewTool("get_unread_messages",
-		mcp.WithDescription("Get unread messages from WhatsApp. Can retrieve unread messages from all chats or filter by specific chat. Returns messages that have not been marked as read in the database."),
-		mcp.WithInputSchema[types.GetUnreadMessagesParams](),
+		mcp.WithDescription("Retrieve unread messages from WhatsApp chats."),
+		mcp.WithString("chat",
+			mcp.Description("Optional WhatsApp JID to filter unread messages from a specific chat. If omitted, returns unread messages from all chats"),
+		),
+		mcp.WithNumber("count",
+			mcp.Description("Maximum number of unread messages to retrieve (default: 50, max: 100)"),
+		),
 	)
 
 	return tool

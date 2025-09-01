@@ -14,7 +14,7 @@ import (
 // GetQRCodeTool creates and returns the get_qr_code MCP tool
 func GetQRCodeTool(whatsappClient client.WhatsAppClientInterface) mcp.Tool {
 	tool := mcp.NewTool("get_qr_code",
-		mcp.WithDescription("Generate QR code for WhatsApp Web login. Returns both the raw QR code string and a hosted image URL that can be displayed directly to users for scanning with WhatsApp mobile app. The QR code expires after 30 seconds and the image file is automatically cleaned up after 5 minutes."),
+		mcp.WithDescription("Generate QR code for WhatsApp Web authentication."),
 	)
 
 	return tool

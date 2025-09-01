@@ -12,8 +12,12 @@ import (
 // IsOnWhatsappTool creates and returns the is_on_whatsapp MCP tool
 func IsOnWhatsappTool(whatsappClient client.WhatsAppClientInterface) mcp.Tool {
 	tool := mcp.NewTool("is_on_whatsapp",
-		mcp.WithDescription("Check if phone numbers are registered on WhatsApp. Takes an array of phone numbers in international format and returns their WhatsApp registration status along with their JIDs (WhatsApp identifiers)."),
-		mcp.WithInputSchema[types.IsOnWhatsappParams](),
+		mcp.WithDescription("Check if phone numbers are registered on WhatsApp and get their JIDs."),
+		mcp.WithArray("phones",
+			mcp.Required(),
+			mcp.Description("Array of phone numbers in international format (e.g., +1234567890) to check"),
+			mcp.WithStringItems(mcp.Description("Phone number in international format")),
+		),
 	)
 
 	return tool
