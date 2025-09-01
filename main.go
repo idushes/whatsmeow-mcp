@@ -124,12 +124,12 @@ func main() {
 	// Start periodic cleanup of expired QR codes (every 10 minutes, remove files older than 30 minutes)
 	qrGenerator.StartPeriodicCleanup(10*time.Minute, 30*time.Minute)
 
-	// Initialize WhatsApp client (using real whatsmeow)
-	whatsappClient, err := client.NewRealWhatsmeowClient(db)
+	// Initialize WhatsApp client
+	whatsappClient, err := client.NewWhatsmeowClient(db)
 	if err != nil {
 		log.Fatalf("Failed to initialize WhatsApp client: %v", err)
 	}
-	log.Println("Real WhatsApp client initialized successfully")
+	log.Println("WhatsApp client initialized successfully")
 	log.Println("Database connection established and migrations completed")
 
 	// Create MCP server with enhanced description

@@ -18,8 +18,8 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// RealWhatsmeowClient implements WhatsApp functionality using the real whatsmeow library
-type RealWhatsmeowClient struct {
+// WhatsmeowClient implements WhatsApp functionality using the whatsmeow library
+type WhatsmeowClient struct {
 	client    *whatsmeow.Client
 	container *sqlstore.Container
 	db        *sql.DB
@@ -38,11 +38,11 @@ type RealWhatsmeowClient struct {
 	loggedIn  bool
 }
 
-// Ensure RealWhatsmeowClient implements WhatsAppClientInterface
-var _ WhatsAppClientInterface = (*RealWhatsmeowClient)(nil)
+// Ensure WhatsmeowClient implements WhatsAppClientInterface
+var _ WhatsAppClientInterface = (*WhatsmeowClient)(nil)
 
-// NewRealWhatsmeowClient creates a new WhatsApp client using real whatsmeow
-func NewRealWhatsmeowClient(db *sql.DB) (*RealWhatsmeowClient, error) {
+// NewWhatsmeowClient creates a new WhatsApp client using whatsmeow
+func NewWhatsmeowClient(db *sql.DB) (*WhatsmeowClient, error) {
 	// Create SQL store container with auto-upgrade
 	container := sqlstore.NewWithDB(db, "postgres", nil)
 
@@ -65,7 +65,7 @@ func NewRealWhatsmeowClient(db *sql.DB) (*RealWhatsmeowClient, error) {
 	// Create WhatsApp client
 	client := whatsmeow.NewClient(deviceStore, nil)
 
-	wc := &RealWhatsmeowClient{
+	wc := &WhatsmeowClient{
 		client:    client,
 		container: container,
 		db:        db,
@@ -82,7 +82,7 @@ func NewRealWhatsmeowClient(db *sql.DB) (*RealWhatsmeowClient, error) {
 }
 
 // setupEventHandlers configures event handlers for WhatsApp events
-func (wc *RealWhatsmeowClient) setupEventHandlers() {
+func (wc *WhatsmeowClient) setupEventHandlers() {
 	wc.client.AddEventHandler(func(evt interface{}) {
 		switch v := evt.(type) {
 		case *events.Message:
@@ -106,7 +106,7 @@ func (wc *RealWhatsmeowClient) setupEventHandlers() {
 }
 
 // handleMessage processes incoming messages
-func (wc *RealWhatsmeowClient) handleMessage(evt *events.Message) {
+func (wc *WhatsmeowClient) handleMessage(evt *events.Message) {
 	message := types.Message{
 		ID:        evt.Info.ID,
 		From:      evt.Info.Sender.String(),
@@ -129,7 +129,7 @@ func (wc *RealWhatsmeowClient) handleMessage(evt *events.Message) {
 }
 
 // handleQR processes QR code events
-func (wc *RealWhatsmeowClient) handleQR(evt *events.QR) {
+func (wc *WhatsmeowClient) handleQR(evt *events.QR) {
 	wc.currentQR = evt.Codes[0]
 	select {
 	case wc.qrChan <- evt.Codes[0]:
@@ -142,7 +142,7 @@ func (wc *RealWhatsmeowClient) handleQR(evt *events.QR) {
 }
 
 // Connect establishes connection to WhatsApp
-func (wc *RealWhatsmeowClient) Connect() error {
+func (wc *WhatsmeowClient) Connect() error {
 	if wc.connected {
 		return nil // Already connected
 	}
@@ -150,17 +150,17 @@ func (wc *RealWhatsmeowClient) Connect() error {
 }
 
 // Disconnect closes the connection to WhatsApp
-func (wc *RealWhatsmeowClient) Disconnect() {
+func (wc *WhatsmeowClient) Disconnect() {
 	wc.client.Disconnect()
 }
 
 // IsLoggedIn returns the current authentication status
-func (wc *RealWhatsmeowClient) IsLoggedIn() bool {
+func (wc *WhatsmeowClient) IsLoggedIn() bool {
 	return wc.client.IsConnected() && wc.client.IsLoggedIn()
 }
 
 // GetQRCode returns the current QR code for authentication
-func (wc *RealWhatsmeowClient) GetQRCode() string {
+func (wc *WhatsmeowClient) GetQRCode() string {
 	if !wc.client.IsConnected() {
 		// Try to connect if not connected
 		if err := wc.Connect(); err != nil {
@@ -183,7 +183,7 @@ func (wc *RealWhatsmeowClient) GetQRCode() string {
 }
 
 // SendMessage sends a text message to the specified recipient
-func (wc *RealWhatsmeowClient) SendMessage(to, text, quotedMessageID string) (*types.MessageResponse, error) {
+func (wc *WhatsmeowClient) SendMessage(to, text, quotedMessageID string) (*types.MessageResponse, error) {
 	if !wc.IsLoggedIn() {
 		return nil, fmt.Errorf("not logged in")
 	}
@@ -242,7 +242,7 @@ func (wc *RealWhatsmeowClient) SendMessage(to, text, quotedMessageID string) (*t
 }
 
 // IsOnWhatsApp checks if phone numbers are registered on WhatsApp
-func (wc *RealWhatsmeowClient) IsOnWhatsApp(phones []string) ([]types.WhatsAppCheckResult, error) {
+func (wc *WhatsmeowClient) IsOnWhatsApp(phones []string) ([]types.WhatsAppCheckResult, error) {
 	if !wc.IsLoggedIn() {
 		return nil, fmt.Errorf("not logged in")
 	}
@@ -277,7 +277,7 @@ func (wc *RealWhatsmeowClient) IsOnWhatsApp(phones []string) ([]types.WhatsAppCh
 }
 
 // GetChatMessages returns messages for a specific chat
-func (wc *RealWhatsmeowClient) GetChatMessages(chatJID string, count int, beforeMessageID string) []types.Message {
+func (wc *WhatsmeowClient) GetChatMessages(chatJID string, count int, beforeMessageID string) []types.Message {
 	var chatMessages []types.Message
 
 	for _, msg := range wc.messages {
@@ -297,23 +297,11 @@ func (wc *RealWhatsmeowClient) GetChatMessages(chatJID string, count int, before
 }
 
 // GetAllMessages returns all messages in the client
-func (wc *RealWhatsmeowClient) GetAllMessages() []types.Message {
+func (wc *WhatsmeowClient) GetAllMessages() []types.Message {
 	return wc.messages
 }
 
-// SetLoggedIn updates the authentication status (for compatibility)
-func (wc *RealWhatsmeowClient) SetLoggedIn(status bool) {
-	// This method is kept for compatibility but doesn't do anything
-	// as the login status is managed by whatsmeow
-}
-
-// UpdateQRCode generates a new QR code (for compatibility)
-func (wc *RealWhatsmeowClient) UpdateQRCode() {
-	// This method is kept for compatibility but doesn't do anything
-	// as QR codes are managed by whatsmeow
-}
-
-// AddMessage adds a new message to the client's message history (for compatibility)
-func (wc *RealWhatsmeowClient) AddMessage(message types.Message) {
+// AddMessage adds a new message to the client's message history
+func (wc *WhatsmeowClient) AddMessage(message types.Message) {
 	wc.messages = append(wc.messages, message)
 }

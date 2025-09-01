@@ -17,8 +17,4 @@ type WhatsAppClientInterface interface {
 
 	// Contact methods
 	IsOnWhatsApp(phones []string) ([]types.WhatsAppCheckResult, error)
-
-	// Compatibility methods (for backward compatibility with mock client)
-	SetLoggedIn(status bool)
-	UpdateQRCode()
 }

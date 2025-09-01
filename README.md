@@ -260,7 +260,8 @@ whatsmeow-mcp/
 │   │   ├── params.go          # Tool parameter definitions
 │   │   └── responses.go       # Response type definitions
 │   └── client/
-│       └── whatsapp.go        # WhatsApp client interface and simulation
+│       ├── interface.go       # WhatsApp client interface
+│       └── whatsmeow.go       # WhatsApp client implementation using whatsmeow
 ├── tools/
 │   ├── is_logged_in.go        # Authentication status tool
 │   ├── get_qr_code.go         # QR code generation tool

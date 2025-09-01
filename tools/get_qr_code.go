@@ -55,11 +55,7 @@ func HandleGetQRCode(whatsappClient client.WhatsAppClientInterface, qrGenerator 
 			ExpiresAt: expiresAt,
 		}
 
-		// QR code expires after 30 seconds
-		go func() {
-			time.Sleep(30 * time.Second)
-			whatsappClient.UpdateQRCode()
-		}()
+		// QR code expires after 30 seconds (handled automatically by whatsmeow)
 
 		content, err := json.Marshal(result)
 		if err != nil {

@@ -2,9 +2,9 @@ package types
 
 // SendMessageParams represents parameters for sending a text message
 type SendMessageParams struct {
-	To              string `json:"to" description:"WhatsApp JID (phone number with @s.whatsapp.net suffix) of the recipient"`
-	Text            string `json:"text" description:"Text content of the message to send"`
-	QuotedMessageID string `json:"quoted_message_id,omitempty" description:"Optional ID of a previous message to quote/reply to"`
+	To              string `json:"to" description:"WhatsApp JID of recipient. For phone numbers: 'phonenumber@s.whatsapp.net' (e.g. '1234567890@s.whatsapp.net'). For groups: 'groupid@g.us'"`
+	Text            string `json:"text" description:"Text content of the message to send (plain text, no formatting)"`
+	QuotedMessageID string `json:"quoted_message_id,omitempty" description:"Optional message ID to reply to. Use message ID from previous chat history to quote/reply to that message"`
 }
 
 // IsOnWhatsappParams represents parameters for checking WhatsApp registration status
