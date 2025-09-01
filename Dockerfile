@@ -53,6 +53,9 @@ COPY --from=builder /build/static /static
 # Use non-root user
 USER appuser
 
+# Ensure static directory is owned by appuser
+RUN chown -R appuser:appuser /static
+
 # Expose ports for MCP and REST API
 EXPOSE 3000 3001
 
