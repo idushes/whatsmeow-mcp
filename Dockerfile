@@ -20,8 +20,8 @@ RUN go mod verify
 # Copy source code
 COPY . .
 
-# Ensure static directory exists
-RUN mkdir -p static
+# Ensure static directory exists and has correct ownership
+RUN mkdir -p static && chown -R appuser:appuser static
 
 # Build the binary
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
@@ -47,14 +47,11 @@ COPY --from=builder /build/whatsmeow-mcp /whatsmeow-mcp
 # Copy migrations
 COPY --from=builder /build/migrations /migrations
 
-# Copy static files
-COPY --from=builder /build/static /static
+# Copy static files with correct ownership (using --chown flag)
+COPY --from=builder --chown=appuser:appuser /build/static /static
 
 # Use non-root user
 USER appuser
-
-# Ensure static directory is owned by appuser
-RUN chown -R appuser:appuser /static
 
 # Expose ports for MCP and REST API
 EXPOSE 3000 3001
