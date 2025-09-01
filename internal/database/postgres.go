@@ -124,6 +124,11 @@ func NewMessageStore(db *sql.DB) *MessageStore {
 	return &MessageStore{db: db}
 }
 
+// GetDB returns the underlying database connection for health checks
+func (ms *MessageStore) GetDB() *sql.DB {
+	return ms.db
+}
+
 // SaveMessage saves a message to the database
 func (ms *MessageStore) SaveMessage(ctx context.Context, msg types.Message, ourJID string) error {
 	query := `

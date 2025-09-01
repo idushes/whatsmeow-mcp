@@ -53,12 +53,8 @@ COPY --from=builder /build/static /static
 # Use non-root user
 USER appuser
 
-# Expose port (adjust if your app uses a different port)
-EXPOSE 8080
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["/whatsmeow-mcp", "--health-check"] || exit 1
+# Expose ports for MCP and REST API
+EXPOSE 3000 3001
 
 # Run the binary
 ENTRYPOINT ["/whatsmeow-mcp"]

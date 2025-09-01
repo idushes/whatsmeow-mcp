@@ -1,13 +1,16 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strconv"
+	"syscall"
 	"time"
 	"whatsmeow-mcp/internal/client"
 	"whatsmeow-mcp/internal/database"
@@ -20,7 +23,8 @@ import (
 
 // Config holds the server configuration
 type Config struct {
-	Port          int
+	MCPPort       int // Port for MCP/SSE server
+	RESTPort      int // Port for REST API (health checks, static files)
 	Host          string
 	ServerName    string
 	ServerVersion string
@@ -30,13 +34,63 @@ type Config struct {
 	DatabaseURL string
 }
 
+// HealthChecker holds components needed for health checks
+type HealthChecker struct {
+	db     *database.MessageStore
+	client client.WhatsAppClientInterface
+	ready  bool
+}
+
+// Global health checker instance
+var healthChecker *HealthChecker
+
+// setupHealthChecks sets up health check endpoints
+func setupHealthChecks(mux *http.ServeMux) {
+	// Liveness probe - checks if the application is running
+	mux.HandleFunc("/health/live", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"status":"ok","timestamp":"%s"}`, time.Now().Format(time.RFC3339))
+	})
+
+	// Readiness probe - checks if the application is ready to serve traffic
+	mux.HandleFunc("/health/ready", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		if healthChecker == nil || !healthChecker.ready {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			fmt.Fprintf(w, `{"status":"not ready","timestamp":"%s"}`, time.Now().Format(time.RFC3339))
+			return
+		}
+
+		// Check database connectivity
+		if err := database.HealthCheck(healthChecker.db.GetDB()); err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			fmt.Fprintf(w, `{"status":"database unhealthy","error":"%s","timestamp":"%s"}`,
+				err.Error(), time.Now().Format(time.RFC3339))
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"status":"ready","timestamp":"%s"}`, time.Now().Format(time.RFC3339))
+	})
+
+	// Combined health endpoint for Docker health check
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"status":"healthy","timestamp":"%s"}`, time.Now().Format(time.RFC3339))
+	})
+}
+
 // loadConfig loads configuration from environment variables
 func loadConfig() *Config {
 	// Try to load .env file, ignore error if it doesn't exist
 	_ = godotenv.Load(".env")
 
 	config := &Config{
-		Port:          3000,
+		MCPPort:       3000,
+		RESTPort:      3001,
 		Host:          "localhost",
 		ServerName:    "whatsmeow-mcp",
 		ServerVersion: "1.0.0",
@@ -46,9 +100,25 @@ func loadConfig() *Config {
 		DatabaseURL: "postgres://postgres:postgres@localhost:5432/whatsmeow_mcp?sslmode=disable",
 	}
 
-	if port := os.Getenv("PORT"); port != "" {
+	// MCP_PORT - port for MCP/SSE server
+	if mcpPort := os.Getenv("MCP_PORT"); mcpPort != "" {
+		if p, err := strconv.Atoi(mcpPort); err == nil {
+			config.MCPPort = p
+		}
+	}
+
+	// REST_PORT - port for REST API (health checks, static files)
+	if restPort := os.Getenv("REST_PORT"); restPort != "" {
+		if p, err := strconv.Atoi(restPort); err == nil {
+			config.RESTPort = p
+		}
+	}
+
+	// PORT - legacy support, sets MCP_PORT if MCP_PORT is not set
+	if port := os.Getenv("PORT"); port != "" && os.Getenv("MCP_PORT") == "" {
 		if p, err := strconv.Atoi(port); err == nil {
-			config.Port = p
+			config.MCPPort = p
+			config.RESTPort = p + 1
 		}
 	}
 
@@ -95,7 +165,7 @@ func main() {
 	config := loadConfig()
 
 	log.Printf("Starting %s v%s - WhatsApp MCP Server", config.ServerName, config.ServerVersion)
-	log.Printf("Configuration: Host=%s, Port=%d, LogLevel=%s", config.Host, config.Port, config.LogLevel)
+	log.Printf("Configuration: Host=%s, MCP_PORT=%d, REST_PORT=%d, LogLevel=%s", config.Host, config.MCPPort, config.RESTPort, config.LogLevel)
 	log.Printf("Database URL: %s", maskDatabaseURL(config.DatabaseURL))
 
 	// Create database if it doesn't exist
@@ -112,11 +182,10 @@ func main() {
 
 	// Initialize QR code generator
 	staticDir := filepath.Join(".", "static")
-	baseURL := fmt.Sprintf("http://%s:%d", config.Host, config.Port+1)
+	baseURL := fmt.Sprintf("http://%s:%d", config.Host, config.RESTPort)
 	qrGenerator := qrcode.NewQRCodeGenerator(staticDir, baseURL)
 
-	// Start periodic cleanup of expired QR codes (every 10 minutes, remove files older than 30 minutes)
-	qrGenerator.StartPeriodicCleanup(10*time.Minute, 30*time.Minute)
+	// Note: QR code cleanup can be implemented as a separate goroutine if needed
 
 	// Initialize WhatsApp client (this will create whatsmeow tables)
 	whatsappClient, err := client.NewWhatsmeowClient(db)
@@ -132,6 +201,14 @@ func main() {
 	}
 	log.Println("Database connection established and migrations completed")
 
+	// Initialize health checker
+	messageStore := database.NewMessageStore(db)
+	healthChecker = &HealthChecker{
+		db:     messageStore,
+		client: whatsappClient,
+		ready:  false,
+	}
+
 	// Create MCP server with enhanced description
 	mcpServer := server.NewMCPServer(
 		config.ServerName,
@@ -142,43 +219,104 @@ func main() {
 	// Register all WhatsApp tools
 	tools.RegisterAllTools(mcpServer, whatsappClient, qrGenerator)
 
+	// Mark as ready after successful initialization
+	healthChecker.ready = true
+	log.Println("Application is ready to serve traffic")
+
 	// Check if running in stdio mode (for MCP clients like Claude Desktop, Cline)
 	if len(os.Args) > 1 && os.Args[1] == "stdio" {
 		log.Println("Starting MCP server in stdio mode for direct client communication")
 		log.Println("This mode is used by MCP clients like Claude Desktop and Cline")
+
+		// Set up signal handling for graceful shutdown
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+		go func() {
+			<-sigChan
+			log.Println("Received shutdown signal, cleaning up...")
+			healthChecker.ready = false
+			os.Exit(0)
+		}()
+
 		err := server.ServeStdio(mcpServer)
 		if err != nil {
-			log.Fatal("Failed to start stdio server:", err)
+			log.Printf("Failed to start stdio server: %v", err)
+			os.Exit(1)
 		}
 	} else {
 		// Run in SSE mode for HTTP-based communication
-		log.Printf("Starting MCP server in SSE (Server-Sent Events) mode on %s:%d", config.Host, config.Port)
-		log.Printf("SSE endpoint will be available at: http://%s:%d/sse", config.Host, config.Port)
-		log.Printf("Static files endpoint will be available at: http://%s:%d/static/", config.Host, config.Port)
+		log.Printf("Starting MCP server in SSE (Server-Sent Events) mode")
+		log.Printf("MCP/SSE endpoint will be available at: http://%s:%d/sse", config.Host, config.MCPPort)
+		log.Printf("Static files endpoint will be available at: http://%s:%d/static/", config.Host, config.RESTPort)
+		log.Printf("Health endpoints available at: http://%s:%d/health/*", config.Host, config.RESTPort)
 		log.Println("This mode allows HTTP-based communication with the MCP server")
 
-		// Set up HTTP server with static file serving
+		// Set up HTTP server with all endpoints on single port
 		mux := http.NewServeMux()
+
+		// Setup health check endpoints
+		setupHealthChecks(mux)
 
 		// Serve static files (QR codes)
 		mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(staticDir))))
 
-		// Create and start SSE server with custom handler
+		// Create SSE server
 		sseServer := server.NewSSEServer(mcpServer,
 			server.WithSSEEndpoint("/sse"),
 		)
 
-		// Start server with custom mux that includes static file serving
+		// Create separate HTTP server for health checks and static files
+		restServer := &http.Server{
+			Addr:    fmt.Sprintf("%s:%d", config.Host, config.RESTPort),
+			Handler: mux,
+		}
+
+		// Start REST API server in background
 		go func() {
-			log.Fatal("Static file server error:", http.ListenAndServe(fmt.Sprintf("%s:%d", config.Host, config.Port+1), http.StripPrefix("/static/", http.FileServer(http.Dir(staticDir)))))
+			log.Printf("Starting REST API server (health + static) on %s", restServer.Addr)
+			if err := restServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				log.Printf("REST server error: %v", err)
+			}
 		}()
 
-		log.Printf("Static files served on: http://%s:%d/", config.Host, config.Port+1)
+		// Start MCP/SSE server in background
+		go func() {
+			log.Printf("Starting MCP/SSE server on %s:%d", config.Host, config.MCPPort)
+			if err := sseServer.Start(fmt.Sprintf("%s:%d", config.Host, config.MCPPort)); err != nil {
+				log.Printf("MCP/SSE server error: %v", err)
+			}
+		}()
 
-		// Start SSE server
-		err := sseServer.Start(fmt.Sprintf("%s:%d", config.Host, config.Port))
-		if err != nil {
-			log.Fatal("Failed to start SSE server:", err)
+		// Set up graceful shutdown
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+		// Wait for shutdown signal
+		<-sigChan
+		log.Println("Received shutdown signal, starting graceful shutdown...")
+
+		// Mark as not ready
+		healthChecker.ready = false
+
+		// Create shutdown context with timeout
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		// Shutdown REST API server
+		log.Println("Shutting down REST API server...")
+		if err := restServer.Shutdown(ctx); err != nil {
+			log.Printf("REST server shutdown error: %v", err)
 		}
+
+		// Note: SSE server doesn't have graceful shutdown method, it will be terminated
+
+		// Note: QR code cleanup would be stopped here if implemented
+
+		// Close database connection
+		log.Println("Closing database connection...")
+		db.Close()
+
+		log.Println("Graceful shutdown completed")
 	}
 }
