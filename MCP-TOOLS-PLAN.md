@@ -10,9 +10,9 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 
 ## Implementation Progress Summary
 **Total Tools:** 37  
-**Implemented:** 5 (14%)  
+**Implemented:** 6 (16%)  
 **In Progress:** 0 (0%)  
-**Planned:** 32 (86%)  
+**Planned:** 31 (84%)  
 **Blocked:** 0 (0%)
 
 ## Quick Tool Index
@@ -74,7 +74,7 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 - [`get_chat_history`](#get_chat_history-) ✅ - Get chat message history
 
 ### Notification Tools (1 tool)
-- [`get_unread_messages`](#get_unread_messages-) ⏳ - Get unread messages from all chats
+- [`get_unread_messages`](#get_unread_messages-) ✅ - Get unread messages from all chats
 
 ### Privacy and Settings Tools (2 tools)
 - [`get_privacy_settings`](#get_privacy_settings-) ⏳ - Get current privacy settings
@@ -562,16 +562,25 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 
 ## Notification Tools
 
-### `get_unread_messages` ⏳
-**Status:** Planned  
-**Description:** Get unread messages from all chats  
+### `get_unread_messages` ✅
+**Status:** Implemented  
+**Description:** Get unread messages from WhatsApp chats. Can retrieve unread messages from all chats or filter by specific chat. Returns messages that have not been marked as read in the database.  
 **Parameters:**
-- `limit`: number (optional) - Maximum number of messages to retrieve (default: 100)
+- `chat`: string (optional) - WhatsApp JID to filter unread messages from a specific chat. If omitted, returns unread messages from all chats
+- `count`: number (optional) - Maximum number of unread messages to retrieve (default: 50, max: 100)
 
 **Returns:**
-- `unread_messages`: array - Array of unread message objects
-- `total_count`: number - Total number of unread messages
+- `messages`: array of objects - Array of unread message objects
+  - `id`: string - Message ID
+  - `from`: string - Sender JID
+  - `to`: string - Recipient JID (optional)
+  - `text`: string - Message text content
+  - `timestamp`: number - Unix timestamp
+  - `chat`: string - Chat JID
+  - `quoted_message_id`: string (optional) - ID of quoted message
 - `success`: boolean - Request status
+- `chat`: string (optional) - Chat JID filter (echoed back if provided)
+- `count`: number - Actual number of messages returned
 
 ## Privacy and Settings Tools
 
