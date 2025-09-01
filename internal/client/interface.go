@@ -15,6 +15,7 @@ type WhatsAppClientInterface interface {
 	GetUnreadMessages(chatJID string, count int) []types.Message
 	GetAllMessages() []types.Message
 	AddMessage(message types.Message)
+	MarkMessagesAsRead(chatJID string) error
 
 	// Contact methods
 	IsOnWhatsApp(phones []string) ([]types.WhatsAppCheckResult, error)

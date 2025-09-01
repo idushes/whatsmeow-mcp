@@ -9,10 +9,10 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 - ❌ **Blocked** - Tool implementation is blocked by dependencies
 
 ## Implementation Progress Summary
-**Total Tools:** 37  
-**Implemented:** 6 (16%)  
+**Total Tools:** 38  
+**Implemented:** 7 (18%)  
 **In Progress:** 0 (0%)  
-**Planned:** 31 (84%)  
+**Planned:** 31 (82%)  
 **Blocked:** 0 (0%)
 
 ## Quick Tool Index
@@ -69,8 +69,9 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 - [`download`](#download-) ⏳ - Download media from message
 - [`upload`](#upload-) ⏳ - Upload media file to WhatsApp servers
 
-### Message Management Tools (2 tools)
+### Message Management Tools (3 tools)
 - [`mark_read`](#mark_read-) ⏳ - Mark messages as read
+- [`mark_messages_as_read`](#mark_messages_as_read-) ✅ - Mark all unread messages in a chat as read
 - [`get_chat_history`](#get_chat_history-) ✅ - Retrieve message history from a WhatsApp conversation with pagination support
 
 ### Notification Tools (1 tool)
@@ -525,6 +526,17 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 
 **Returns:**
 - `success`: boolean - Mark read status
+
+### `mark_messages_as_read` ✅
+**Status:** Implemented  
+**Description:** Mark all unread messages in a specific chat as read. This tool updates the read status of all unread messages in the specified chat.  
+**Parameters:**
+- `chat`: string - WhatsApp JID (chat identifier) to mark messages as read in this chat. For phone numbers: 'phonenumber@s.whatsapp.net' (e.g. '1234567890@s.whatsapp.net'). For groups: 'groupid@g.us'
+
+**Returns:**
+- `success`: boolean - Operation success status
+- `chat`: string - Chat JID (echoed back)
+- `message`: string - Descriptive message about the operation result
 
 ### `get_chat_history` ✅
 **Status:** Implemented  

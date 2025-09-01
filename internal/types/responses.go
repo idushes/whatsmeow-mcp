@@ -80,3 +80,10 @@ type UnreadMessagesResponse struct {
 	Chat     string    `json:"chat,omitempty"`
 	Count    int       `json:"count"`
 }
+
+// MarkMessagesAsReadResponse represents the response for marking messages as read
+type MarkMessagesAsReadResponse struct {
+	Success bool   `json:"success"`
+	Chat    string `json:"chat"`
+	Message string `json:"message"`
+}

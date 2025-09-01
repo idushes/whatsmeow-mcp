@@ -438,6 +438,18 @@ func (wc *WhatsmeowClient) GetUnreadMessages(chatJID string, count int) []types.
 	return unreadMessages
 }
 
+// MarkMessagesAsRead marks all unread messages in a chat as read
+func (wc *WhatsmeowClient) MarkMessagesAsRead(chatJID string) error {
+	if wc.ourJID == "" {
+		return fmt.Errorf("not logged in")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	return wc.messageStore.MarkMessagesAsRead(ctx, wc.ourJID, chatJID)
+}
+
 // GetAllMessages returns all messages from database
 func (wc *WhatsmeowClient) GetAllMessages() []types.Message {
 	if wc.ourJID == "" {

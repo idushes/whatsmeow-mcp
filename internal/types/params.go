@@ -24,3 +24,8 @@ type GetUnreadMessagesParams struct {
 	Chat  string `json:"chat,omitempty" description:"Optional WhatsApp JID to filter unread messages from a specific chat. If omitted, returns unread messages from all chats"`
 	Count int    `json:"count,omitempty" description:"Maximum number of unread messages to retrieve (default: 50, max: 100)"`
 }
+
+// MarkMessagesAsReadParams represents parameters for marking messages as read
+type MarkMessagesAsReadParams struct {
+	Chat string `json:"chat" description:"WhatsApp JID (chat identifier) to mark messages as read in this chat"`
+}
