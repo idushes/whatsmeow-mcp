@@ -9,29 +9,26 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 - ❌ **Blocked** - Tool implementation is blocked by dependencies
 
 ## Implementation Progress Summary
-**Total Tools:** 38  
-**Implemented:** 5 (13%)  
+**Total Tools:** 37  
+**Implemented:** 5 (14%)  
 **In Progress:** 0 (0%)  
-**Planned:** 33 (87%)  
+**Planned:** 32 (86%)  
 **Blocked:** 0 (0%)
 
 ## Quick Tool Index
 
-### Connection and Authentication Tools (7 tools)
-- [`connect`](#connect-) ⏳ - Establishes connection to WhatsApp servers
-- [`disconnect`](#disconnect-) ⏳ - Disconnects from WhatsApp servers
+### Connection and Authentication Tools (3 tools)
 - [`get_qr_code`](#get_qr_code-) ✅ - Generates QR code for WhatsApp Web login
-- [`pair_phone`](#pair_phone-) ⏳ - Pair device using phone number
 - [`logout`](#logout-) ⏳ - Logout from WhatsApp account
-- [`is_connected`](#is_connected-) ⏳ - Check if client is connected to WhatsApp servers
 - [`is_logged_in`](#is_logged_in-) ✅ - Check if user is authenticated
 
-### Message Sending Tools (9 tools)
+### Message Sending Tools (10 tools)
 - [`send_message`](#send_message-) ✅ - Send text message to chat or contact
 - [`send_image_message`](#send_image_message-) ⏳ - Send image with optional caption
 - [`send_document_message`](#send_document_message-) ⏳ - Send document/file
 - [`send_audio_message`](#send_audio_message-) ⏳ - Send audio message
 - [`send_video_message`](#send_video_message-) ⏳ - Send video message
+- [`send_location_message`](#send_location_message-) ⏳ - Send location message
 - [`build_poll_creation`](#build_poll_creation-) ⏳ - Create a poll message
 - [`build_poll_vote`](#build_poll_vote-) ⏳ - Vote in a poll
 - [`build_reaction`](#build_reaction-) ⏳ - Add reaction to a message
@@ -49,17 +46,24 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 - [`set_group_photo`](#set_group_photo-) ⏳ - Set group profile photo
 - [`update_group_participants`](#update_group_participants-) ⏳ - Add or remove group participants
 
-### Contact and User Information Tools (5 tools)
+### Contact and User Information Tools (6 tools)
 - [`get_user_info`](#get_user_info-) ⏳ - Get user information including avatar, status, and verification
 - [`get_user_devices`](#get_user_devices-) ⏳ - Get list of user's devices
 - [`is_on_whatsapp`](#is_on_whatsapp-) ✅ - Check if phone numbers are registered on WhatsApp
 - [`get_profile_picture_info`](#get_profile_picture_info-) ⏳ - Get profile picture information
 - [`get_business_profile`](#get_business_profile-) ⏳ - Get business profile information
+- [`get_contacts`](#get_contacts-) ⏳ - Get list of contacts
+
+### Profile Management Tools (1 tool)
+- [`set_status_message`](#set_status_message-) ⏳ - Set user status message
 
 ### Presence and Status Tools (3 tools)
 - [`send_presence`](#send_presence-) ⏳ - Set global presence status
 - [`subscribe_presence`](#subscribe_presence-) ⏳ - Subscribe to user's presence updates
 - [`send_chat_presence`](#send_chat_presence-) ⏳ - Send typing or recording status to specific chat
+
+### Chat Management Tools (1 tool)
+- [`get_all_chats`](#get_all_chats-) ⏳ - Get list of all chats
 
 ### Media Tools (2 tools)
 - [`download`](#download-) ⏳ - Download media from message
@@ -69,13 +73,14 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 - [`mark_read`](#mark_read-) ⏳ - Mark messages as read
 - [`get_chat_history`](#get_chat_history-) ✅ - Get chat message history
 
+### Notification Tools (1 tool)
+- [`get_unread_messages`](#get_unread_messages-) ⏳ - Get unread messages from all chats
+
 ### Privacy and Settings Tools (2 tools)
 - [`get_privacy_settings`](#get_privacy_settings-) ⏳ - Get current privacy settings
 - [`get_blocklist`](#get_blocklist-) ⏳ - Get list of blocked contacts
 
-### Utility Tools (2 tools)
-- [`generate_message_id`](#generate_message_id-) ⏳ - Generate unique message ID
-- [`parse_jid`](#parse_jid-) ⏳ - Parse and validate JID format
+
 
 ---
 
@@ -83,33 +88,6 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 
 ## Connection and Authentication Tools
 
-### `connect` ⏳
-**Status:** Planned  
-**Description:** Establishes connection to WhatsApp servers  
-**Parameters:**
-- None
-
-**Returns:**
-- `success`: boolean - Connection status
-- `message`: string - Status message
-
-**Example:**
-```json
-{
-  "name": "connect",
-  "arguments": {}
-}
-```
-
-### `disconnect` ⏳
-**Status:** Planned  
-**Description:** Disconnects from WhatsApp servers  
-**Parameters:**
-- None
-
-**Returns:**
-- `success`: boolean - Disconnection status
-- `message`: string - Status message
 
 ### `get_qr_code` ✅
 **Status:** Implemented  
@@ -118,20 +96,14 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 - None
 
 **Returns:**
-- `qr_code`: string - Base64 encoded QR code image
-- `code`: string - QR code text content
-- `timeout`: number - QR code expiration time in seconds
+- `qr_code`: string - Raw QR code string content
+- `code`: string - Same as qr_code (for compatibility)
+- `image_url`: string - URL to hosted QR code image file
+- `timeout`: number - QR code expiration time in seconds (30)
+- `expires_at`: number - Unix timestamp when QR code expires
+- `success`: boolean - Operation success status
 
-### `pair_phone` ⏳
-**Status:** Planned  
-**Description:** Pair device using phone number  
-**Parameters:**
-- `phone`: string - Phone number in international format (e.g., "+1234567890")
-- `show_push_notification`: boolean - Whether to show push notification
 
-**Returns:**
-- `pairing_code`: string - 8-digit pairing code
-- `success`: boolean - Pairing initiation status
 
 ### `logout` ⏳
 **Status:** Planned  
@@ -143,14 +115,7 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 - `success`: boolean - Logout status
 - `message`: string - Status message
 
-### `is_connected` ⏳
-**Status:** Planned  
-**Description:** Check if client is connected to WhatsApp servers  
-**Parameters:**
-- None
 
-**Returns:**
-- `connected`: boolean - Connection status
 
 ### `is_logged_in` ✅
 **Status:** Implemented  
@@ -160,6 +125,7 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 
 **Returns:**
 - `logged_in`: boolean - Authentication status
+- `success`: boolean - Request status
 
 ## Message Sending Tools
 
@@ -173,8 +139,11 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 
 **Returns:**
 - `message_id`: string - Sent message ID
-- `timestamp`: number - Message timestamp
+- `timestamp`: number - Message timestamp (Unix timestamp)
 - `success`: boolean - Send status
+- `to`: string - Recipient JID (echoed back)
+- `text`: string - Message text (echoed back)
+- `quoted_message_id`: string (optional) - Quoted message ID if provided
 
 ### `send_image_message` ⏳
 **Status:** Planned  
@@ -225,6 +194,21 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 - `to`: string - Recipient JID
 - `video_path`: string - Path to video file
 - `caption`: string (optional) - Video caption
+
+**Returns:**
+- `message_id`: string - Sent message ID
+- `timestamp`: number - Message timestamp
+- `success`: boolean - Send status
+
+### `send_location_message` ⏳
+**Status:** Planned  
+**Description:** Send location message  
+**Parameters:**
+- `to`: string - Recipient JID
+- `latitude`: number - Location latitude
+- `longitude`: number - Location longitude
+- `name`: string (optional) - Location name/title
+- `address`: string (optional) - Location address
 
 **Returns:**
 - `message_id`: string - Sent message ID
@@ -422,7 +406,10 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 - `phones`: array of strings - Phone numbers in international format
 
 **Returns:**
-- `results`: array - Registration status for each phone number
+- `results`: array of objects - Registration status for each phone number
+  - `phone`: string - Original phone number
+  - `is_on_whatsapp`: boolean - Registration status
+  - `jid`: string - WhatsApp JID if registered
 - `success`: boolean - Request status
 
 ### `get_profile_picture_info` ⏳
@@ -445,6 +432,27 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 **Returns:**
 - `business_profile`: object - Business information
 - `success`: boolean - Request status
+
+### `get_contacts` ⏳
+**Status:** Planned  
+**Description:** Get list of contacts  
+**Parameters:**
+- None
+
+**Returns:**
+- `contacts`: array - Array of contact objects with JID, name, and status
+- `success`: boolean - Request status
+
+## Profile Management Tools
+
+### `set_status_message` ⏳
+**Status:** Planned  
+**Description:** Set user status message  
+**Parameters:**
+- `status`: string - Status message text
+
+**Returns:**
+- `success`: boolean - Update status
 
 ## Presence and Status Tools
 
@@ -523,12 +531,46 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 **Description:** Get chat message history  
 **Parameters:**
 - `chat`: string - Chat JID
-- `count`: number (optional) - Number of messages to retrieve (default: 50)
+- `count`: number (optional) - Number of messages to retrieve (default: 50, max: 100)
 - `before_message_id`: string (optional) - Get messages before this ID
 
 **Returns:**
-- `messages`: array - Array of message objects
+- `messages`: array of objects - Array of message objects
+  - `id`: string - Message ID
+  - `from`: string - Sender JID
+  - `to`: string - Recipient JID (optional)
+  - `text`: string - Message text content
+  - `timestamp`: number - Unix timestamp
+  - `chat`: string - Chat JID
+  - `quoted_message_id`: string (optional) - ID of quoted message
 - `has_more`: boolean - Whether more messages are available
+- `success`: boolean - Request status
+- `chat`: string - Chat JID (echoed back)
+- `count`: number - Actual number of messages returned
+
+## Chat Management Tools
+
+### `get_all_chats` ⏳
+**Status:** Planned  
+**Description:** Get list of all chats  
+**Parameters:**
+- None
+
+**Returns:**
+- `chats`: array - Array of chat objects with JID, name, type, and last message info
+- `success`: boolean - Request status
+
+## Notification Tools
+
+### `get_unread_messages` ⏳
+**Status:** Planned  
+**Description:** Get unread messages from all chats  
+**Parameters:**
+- `limit`: number (optional) - Maximum number of messages to retrieve (default: 100)
+
+**Returns:**
+- `unread_messages`: array - Array of unread message objects
+- `total_count`: number - Total number of unread messages
 - `success`: boolean - Request status
 
 ## Privacy and Settings Tools
@@ -552,31 +594,6 @@ This document describes all planned tools for the whatsmeow-mcp server and track
 **Returns:**
 - `blocked_contacts`: array of strings - Blocked JIDs
 - `success`: boolean - Request status
-
-## Utility Tools
-
-### `generate_message_id` ⏳
-**Status:** Planned  
-**Description:** Generate unique message ID  
-**Parameters:**
-- None
-
-**Returns:**
-- `message_id`: string - Generated message ID
-
-### `parse_jid` ⏳
-**Status:** Planned  
-**Description:** Parse and validate JID format  
-**Parameters:**
-- `jid`: string - JID to parse
-
-**Returns:**
-- `user`: string - User part of JID
-- `server`: string - Server part of JID
-- `device`: number - Device ID (for AD JIDs)
-- `is_group`: boolean - Whether JID is a group
-- `is_broadcast`: boolean - Whether JID is a broadcast list
-- `valid`: boolean - Whether JID format is valid
 
 ## Error Handling
 
