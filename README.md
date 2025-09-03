@@ -2,6 +2,8 @@
 
 A Model Context Protocol (MCP) server that provides WhatsApp functionality through standardized tools. This server enables AI agents and MCP clients to interact with WhatsApp services in a structured and reliable way.
 
+The server implements the latest MCP protocol specification (2025-06-18) with Streamable HTTP transport, supporting both stdio and HTTP-based communication modes.
+
 ## Features
 
 This MCP server exposes WhatsApp capabilities as standardized MCP tools that can be seamlessly integrated with AI agents, Claude Desktop, Cline, and other MCP-compatible applications. All tools provide comprehensive error handling, parameter validation, and detailed responses.
@@ -54,19 +56,30 @@ LOG_LEVEL=info
 
 ## Usage
 
-### Running in stdio mode (for MCP clients)
+The server supports two transport modes as defined in the MCP specification:
+
+### 1. stdio mode (for MCP clients like Claude Desktop, Cline)
 
 ```bash
 go run main.go stdio
 ```
 
-### Running in SSE mode (HTTP server)
+In this mode, the server communicates through standard input/output streams, making it ideal for direct integration with MCP clients.
+
+### 2. Streamable HTTP mode (HTTP server)
 
 ```bash
 go run main.go
 ```
 
-The server will start on `http://localhost:3000` with the SSE endpoint available at `/sse`.
+The server will start on `http://localhost:3000` with the MCP endpoint available at `/mcp`.
+
+In this mode:
+- The server accepts JSON-RPC messages via HTTP POST to `/mcp`
+- Supports Server-Sent Events (SSE) for streaming responses
+- Implements session management with `Mcp-Session-Id` header
+- Validates protocol version via `MCP-Protocol-Version` header
+- Provides separate health check endpoints on port 3001
 
 ### Building
 

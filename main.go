@@ -23,7 +23,7 @@ import (
 
 // Config holds the server configuration
 type Config struct {
-	MCPPort       int // Port for MCP/SSE server
+	MCPPort       int // Port for MCP server (Streamable HTTP)
 	RESTPort      int // Port for REST API (health checks, static files)
 	Host          string
 	ServerName    string
@@ -100,7 +100,7 @@ func loadConfig() *Config {
 		DatabaseURL: "postgres://postgres:postgres@localhost:5432/whatsmeow_mcp?sslmode=disable",
 	}
 
-	// MCP_PORT - port for MCP/SSE server
+	// MCP_PORT - port for MCP server (Streamable HTTP)
 	if mcpPort := os.Getenv("MCP_PORT"); mcpPort != "" {
 		if p, err := strconv.Atoi(mcpPort); err == nil {
 			config.MCPPort = p
@@ -245,12 +245,12 @@ func main() {
 			os.Exit(1)
 		}
 	} else {
-		// Run in SSE mode for HTTP-based communication
-		log.Printf("Starting MCP server in SSE (Server-Sent Events) mode")
-		log.Printf("MCP/SSE endpoint will be available at: http://%s:%d/sse", config.Host, config.MCPPort)
+		// Run in Streamable HTTP mode for HTTP-based communication
+		log.Printf("Starting MCP server in Streamable HTTP mode")
+		log.Printf("MCP endpoint will be available at: http://%s:%d/mcp", config.Host, config.MCPPort)
 		log.Printf("Static files endpoint will be available at: http://%s:%d/static/", config.Host, config.RESTPort)
 		log.Printf("Health endpoints available at: http://%s:%d/health/*", config.Host, config.RESTPort)
-		log.Println("This mode allows HTTP-based communication with the MCP server")
+		log.Println("This mode allows HTTP-based communication with the MCP server using the new Streamable HTTP transport")
 
 		// Set up HTTP server with all endpoints on single port
 		mux := http.NewServeMux()
@@ -261,9 +261,9 @@ func main() {
 		// Serve static files (QR codes)
 		mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(staticDir))))
 
-		// Create SSE server
-		sseServer := server.NewSSEServer(mcpServer,
-			server.WithSSEEndpoint("/sse"),
+		// Create Streamable HTTP server with the new endpoint path
+		streamableHTTPServer := server.NewStreamableHTTPServer(mcpServer,
+			server.WithEndpointPath("/mcp"),
 		)
 
 		// Create separate HTTP server for health checks and static files
@@ -280,11 +280,11 @@ func main() {
 			}
 		}()
 
-		// Start MCP/SSE server in background
+		// Start MCP Streamable HTTP server in background
 		go func() {
-			log.Printf("Starting MCP/SSE server on %s:%d", config.Host, config.MCPPort)
-			if err := sseServer.Start(fmt.Sprintf("%s:%d", config.Host, config.MCPPort)); err != nil {
-				log.Printf("MCP/SSE server error: %v", err)
+			log.Printf("Starting MCP Streamable HTTP server on %s:%d", config.Host, config.MCPPort)
+			if err := streamableHTTPServer.Start(fmt.Sprintf("%s:%d", config.Host, config.MCPPort)); err != nil {
+				log.Printf("MCP Streamable HTTP server error: %v", err)
 			}
 		}()
 
@@ -309,7 +309,11 @@ func main() {
 			log.Printf("REST server shutdown error: %v", err)
 		}
 
-		// Note: SSE server doesn't have graceful shutdown method, it will be terminated
+		// Shutdown Streamable HTTP server
+		log.Println("Shutting down MCP Streamable HTTP server...")
+		if err := streamableHTTPServer.Shutdown(ctx); err != nil {
+			log.Printf("MCP Streamable HTTP server shutdown error: %v", err)
+		}
 
 		// Note: QR code cleanup would be stopped here if implemented
 
