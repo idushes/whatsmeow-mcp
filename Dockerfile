@@ -40,6 +40,7 @@ COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 
 # Import user and group files from builder
 COPY --from=builder /etc/passwd /etc/passwd
+COPY --from=builder /etc/group /etc/group
 
 # Copy the binary
 COPY --from=builder /build/whatsmeow-mcp /whatsmeow-mcp
