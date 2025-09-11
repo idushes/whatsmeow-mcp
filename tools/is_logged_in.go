@@ -2,7 +2,6 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"whatsmeow-mcp/internal/client"
 	"whatsmeow-mcp/internal/types"
 
@@ -26,23 +25,14 @@ func HandleIsLoggedIn(whatsappClient client.WhatsAppClientInterface) func(ctx co
 			Success:  true,
 		}
 
-		content, err := json.Marshal(result)
-		if err != nil {
-			errorResult := types.StandardResponse{
-				Success: false,
-				Error: &types.ErrorInfo{
-					Code:    "MARSHAL_ERROR",
-					Message: "Failed to serialize response",
-					Details: err.Error(),
-				},
-			}
-			content, _ = json.Marshal(errorResult)
+		// Create fallback text for backward compatibility
+		var fallbackText string
+		if result.LoggedIn {
+			fallbackText = "Client is logged in to WhatsApp"
+		} else {
+			fallbackText = "Client is not logged in to WhatsApp"
 		}
 
-		return &mcp.CallToolResult{
-			Content: []mcp.Content{
-				mcp.NewTextContent(string(content)),
-			},
-		}, nil
+		return mcp.NewToolResultStructured(result, fallbackText), nil
 	}
 }

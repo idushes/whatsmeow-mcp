@@ -3,6 +3,7 @@ package tools
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"whatsmeow-mcp/internal/client"
 	"whatsmeow-mcp/internal/types"
 
@@ -43,12 +44,7 @@ func HandleSendMessage(whatsappClient client.WhatsAppClientInterface) func(ctx c
 					Details: err.Error(),
 				},
 			}
-			content, _ := json.Marshal(result)
-			return &mcp.CallToolResult{
-				Content: []mcp.Content{
-					mcp.NewTextContent(string(content)),
-				},
-			}, nil
+			return mcp.NewToolResultStructured(result, "Failed to parse parameters"), nil
 		}
 
 		// Check if user is authenticated
@@ -60,12 +56,7 @@ func HandleSendMessage(whatsappClient client.WhatsAppClientInterface) func(ctx c
 					Message: "Client is not authenticated. Please login first using get_qr_code tool.",
 				},
 			}
-			content, _ := json.Marshal(result)
-			return &mcp.CallToolResult{
-				Content: []mcp.Content{
-					mcp.NewTextContent(string(content)),
-				},
-			}, nil
+			return mcp.NewToolResultStructured(result, "Not authenticated. Please login first."), nil
 		}
 
 		// Validate required parameters
@@ -77,12 +68,7 @@ func HandleSendMessage(whatsappClient client.WhatsAppClientInterface) func(ctx c
 					Message: "Required parameters 'to' and 'text' must be provided",
 				},
 			}
-			content, _ := json.Marshal(result)
-			return &mcp.CallToolResult{
-				Content: []mcp.Content{
-					mcp.NewTextContent(string(content)),
-				},
-			}, nil
+			return mcp.NewToolResultStructured(result, "Missing required parameters: 'to' and 'text'"), nil
 		}
 
 		// Send message using client interface
@@ -96,33 +82,14 @@ func HandleSendMessage(whatsappClient client.WhatsAppClientInterface) func(ctx c
 					Details: err.Error(),
 				},
 			}
-			content, _ := json.Marshal(result)
-			return &mcp.CallToolResult{
-				Content: []mcp.Content{
-					mcp.NewTextContent(string(content)),
-				},
-			}, nil
+			return mcp.NewToolResultStructured(result, "Failed to send message"), nil
 		}
 
 		result := response
 
-		content, err := json.Marshal(result)
-		if err != nil {
-			errorResult := types.StandardResponse{
-				Success: false,
-				Error: &types.ErrorInfo{
-					Code:    "MARSHAL_ERROR",
-					Message: "Failed to serialize response",
-					Details: err.Error(),
-				},
-			}
-			content, _ = json.Marshal(errorResult)
-		}
+		// Create fallback text for backward compatibility
+		fallbackText := fmt.Sprintf("Message sent successfully to %s", params.To)
 
-		return &mcp.CallToolResult{
-			Content: []mcp.Content{
-				mcp.NewTextContent(string(content)),
-			},
-		}, nil
+		return mcp.NewToolResultStructured(result, fallbackText), nil
 	}
 }

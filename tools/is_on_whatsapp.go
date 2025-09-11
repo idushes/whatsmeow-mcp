@@ -3,6 +3,7 @@ package tools
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"whatsmeow-mcp/internal/client"
 	"whatsmeow-mcp/internal/types"
 
@@ -37,12 +38,7 @@ func HandleIsOnWhatsapp(whatsappClient client.WhatsAppClientInterface) func(ctx 
 					Details: err.Error(),
 				},
 			}
-			content, _ := json.Marshal(result)
-			return &mcp.CallToolResult{
-				Content: []mcp.Content{
-					mcp.NewTextContent(string(content)),
-				},
-			}, nil
+			return mcp.NewToolResultStructured(result, "Failed to parse parameters"), nil
 		}
 
 		// Validate parameters
@@ -54,12 +50,7 @@ func HandleIsOnWhatsapp(whatsappClient client.WhatsAppClientInterface) func(ctx 
 					Message: "At least one phone number must be provided in the 'phones' array",
 				},
 			}
-			content, _ := json.Marshal(result)
-			return &mcp.CallToolResult{
-				Content: []mcp.Content{
-					mcp.NewTextContent(string(content)),
-				},
-			}, nil
+			return mcp.NewToolResultStructured(result, "No phone numbers provided"), nil
 		}
 
 		// Use client interface to check phone numbers
@@ -73,12 +64,7 @@ func HandleIsOnWhatsapp(whatsappClient client.WhatsAppClientInterface) func(ctx 
 					Details: err.Error(),
 				},
 			}
-			content, _ := json.Marshal(result)
-			return &mcp.CallToolResult{
-				Content: []mcp.Content{
-					mcp.NewTextContent(string(content)),
-				},
-			}, nil
+			return mcp.NewToolResultStructured(result, "Failed to check WhatsApp registration status"), nil
 		}
 
 		result := types.WhatsAppCheckResponse{
@@ -86,23 +72,9 @@ func HandleIsOnWhatsapp(whatsappClient client.WhatsAppClientInterface) func(ctx 
 			Success: true,
 		}
 
-		content, err := json.Marshal(result)
-		if err != nil {
-			errorResult := types.StandardResponse{
-				Success: false,
-				Error: &types.ErrorInfo{
-					Code:    "MARSHAL_ERROR",
-					Message: "Failed to serialize response",
-					Details: err.Error(),
-				},
-			}
-			content, _ = json.Marshal(errorResult)
-		}
+		// Create fallback text for backward compatibility
+		fallbackText := fmt.Sprintf("Checked %d phone numbers for WhatsApp registration", len(params.Phones))
 
-		return &mcp.CallToolResult{
-			Content: []mcp.Content{
-				mcp.NewTextContent(string(content)),
-			},
-		}, nil
+		return mcp.NewToolResultStructured(result, fallbackText), nil
 	}
 }

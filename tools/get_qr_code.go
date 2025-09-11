@@ -2,7 +2,6 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 	"whatsmeow-mcp/internal/client"
 	"whatsmeow-mcp/internal/qrcode"
@@ -36,12 +35,7 @@ func HandleGetQRCode(whatsappClient client.WhatsAppClientInterface, qrGenerator 
 					Details: err.Error(),
 				},
 			}
-			content, _ := json.Marshal(errorResult)
-			return &mcp.CallToolResult{
-				Content: []mcp.Content{
-					mcp.NewTextContent(string(content)),
-				},
-			}, nil
+			return mcp.NewToolResultStructured(errorResult, "Failed to generate QR code"), nil
 		}
 
 		expiresAt := time.Now().Add(30 * time.Second).Unix()
@@ -56,24 +50,9 @@ func HandleGetQRCode(whatsappClient client.WhatsAppClientInterface, qrGenerator 
 		}
 
 		// QR code expires after 30 seconds (handled automatically by whatsmeow)
+		// Create fallback text for backward compatibility
+		fallbackText := "QR code generated successfully. Expires in 30 seconds. Scan with WhatsApp to login."
 
-		content, err := json.Marshal(result)
-		if err != nil {
-			errorResult := types.StandardResponse{
-				Success: false,
-				Error: &types.ErrorInfo{
-					Code:    "MARSHAL_ERROR",
-					Message: "Failed to serialize response",
-					Details: err.Error(),
-				},
-			}
-			content, _ = json.Marshal(errorResult)
-		}
-
-		return &mcp.CallToolResult{
-			Content: []mcp.Content{
-				mcp.NewTextContent(string(content)),
-			},
-		}, nil
+		return mcp.NewToolResultStructured(result, fallbackText), nil
 	}
 }

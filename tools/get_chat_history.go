@@ -3,6 +3,7 @@ package tools
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"whatsmeow-mcp/internal/client"
 	"whatsmeow-mcp/internal/types"
 
@@ -42,12 +43,7 @@ func HandleGetChatHistory(whatsappClient client.WhatsAppClientInterface) func(ct
 					Details: err.Error(),
 				},
 			}
-			content, _ := json.Marshal(result)
-			return &mcp.CallToolResult{
-				Content: []mcp.Content{
-					mcp.NewTextContent(string(content)),
-				},
-			}, nil
+			return mcp.NewToolResultStructured(result, "Failed to parse parameters"), nil
 		}
 
 		// Validate required parameters
@@ -59,12 +55,7 @@ func HandleGetChatHistory(whatsappClient client.WhatsAppClientInterface) func(ct
 					Message: "Required parameter 'chat' (WhatsApp JID) must be provided",
 				},
 			}
-			content, _ := json.Marshal(result)
-			return &mcp.CallToolResult{
-				Content: []mcp.Content{
-					mcp.NewTextContent(string(content)),
-				},
-			}, nil
+			return mcp.NewToolResultStructured(result, "Missing required parameter: 'chat'"), nil
 		}
 
 		// Set default count if not provided or invalid
@@ -92,23 +83,12 @@ func HandleGetChatHistory(whatsappClient client.WhatsAppClientInterface) func(ct
 			Count:    len(chatMessages),
 		}
 
-		content, err := json.Marshal(result)
-		if err != nil {
-			errorResult := types.StandardResponse{
-				Success: false,
-				Error: &types.ErrorInfo{
-					Code:    "MARSHAL_ERROR",
-					Message: "Failed to serialize response",
-					Details: err.Error(),
-				},
-			}
-			content, _ = json.Marshal(errorResult)
+		// Create fallback text for backward compatibility
+		fallbackText := fmt.Sprintf("Retrieved %d messages from chat %s", len(chatMessages), params.Chat)
+		if hasMore {
+			fallbackText += " (more available)"
 		}
 
-		return &mcp.CallToolResult{
-			Content: []mcp.Content{
-				mcp.NewTextContent(string(content)),
-			},
-		}, nil
+		return mcp.NewToolResultStructured(result, fallbackText), nil
 	}
 }

@@ -3,6 +3,7 @@ package tools
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"whatsmeow-mcp/internal/client"
 	"whatsmeow-mcp/internal/types"
 
@@ -35,12 +36,7 @@ func HandleMarkMessagesAsRead(whatsappClient client.WhatsAppClientInterface) fun
 					Details: err.Error(),
 				},
 			}
-			content, _ := json.Marshal(result)
-			return &mcp.CallToolResult{
-				Content: []mcp.Content{
-					mcp.NewTextContent(string(content)),
-				},
-			}, nil
+			return mcp.NewToolResultStructured(result, "Failed to parse parameters"), nil
 		}
 
 		// Validate required parameters
@@ -53,12 +49,7 @@ func HandleMarkMessagesAsRead(whatsappClient client.WhatsAppClientInterface) fun
 					Details: "Please provide a valid WhatsApp JID (chat identifier)",
 				},
 			}
-			content, _ := json.Marshal(result)
-			return &mcp.CallToolResult{
-				Content: []mcp.Content{
-					mcp.NewTextContent(string(content)),
-				},
-			}, nil
+			return mcp.NewToolResultStructured(result, "Missing required parameter: 'chat'"), nil
 		}
 
 		// Mark messages as read
@@ -72,12 +63,7 @@ func HandleMarkMessagesAsRead(whatsappClient client.WhatsAppClientInterface) fun
 					Details: err.Error(),
 				},
 			}
-			content, _ := json.Marshal(result)
-			return &mcp.CallToolResult{
-				Content: []mcp.Content{
-					mcp.NewTextContent(string(content)),
-				},
-			}, nil
+			return mcp.NewToolResultStructured(result, "Failed to mark messages as read"), nil
 		}
 
 		// Success response
@@ -87,23 +73,9 @@ func HandleMarkMessagesAsRead(whatsappClient client.WhatsAppClientInterface) fun
 			Message: "All unread messages in the chat have been marked as read",
 		}
 
-		content, err := json.Marshal(result)
-		if err != nil {
-			errorResult := types.StandardResponse{
-				Success: false,
-				Error: &types.ErrorInfo{
-					Code:    "MARSHAL_ERROR",
-					Message: "Failed to serialize response",
-					Details: err.Error(),
-				},
-			}
-			content, _ = json.Marshal(errorResult)
-		}
+		// Create fallback text for backward compatibility
+		fallbackText := fmt.Sprintf("Successfully marked all messages as read in chat %s", params.Chat)
 
-		return &mcp.CallToolResult{
-			Content: []mcp.Content{
-				mcp.NewTextContent(string(content)),
-			},
-		}, nil
+		return mcp.NewToolResultStructured(result, fallbackText), nil
 	}
 }

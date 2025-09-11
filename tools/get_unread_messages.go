@@ -3,6 +3,7 @@ package tools
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"whatsmeow-mcp/internal/client"
 	"whatsmeow-mcp/internal/types"
 
@@ -38,12 +39,7 @@ func HandleGetUnreadMessages(whatsappClient client.WhatsAppClientInterface) func
 					Details: err.Error(),
 				},
 			}
-			content, _ := json.Marshal(result)
-			return &mcp.CallToolResult{
-				Content: []mcp.Content{
-					mcp.NewTextContent(string(content)),
-				},
-			}, nil
+			return mcp.NewToolResultStructured(result, "Failed to parse parameters"), nil
 		}
 
 		// Set default count if not provided or invalid
@@ -66,23 +62,12 @@ func HandleGetUnreadMessages(whatsappClient client.WhatsAppClientInterface) func
 			Count:    len(unreadMessages),
 		}
 
-		content, err := json.Marshal(result)
-		if err != nil {
-			errorResult := types.StandardResponse{
-				Success: false,
-				Error: &types.ErrorInfo{
-					Code:    "MARSHAL_ERROR",
-					Message: "Failed to serialize response",
-					Details: err.Error(),
-				},
-			}
-			content, _ = json.Marshal(errorResult)
+		// Create fallback text for backward compatibility
+		fallbackText := fmt.Sprintf("Found %d unread messages", len(unreadMessages))
+		if params.Chat != "" {
+			fallbackText += fmt.Sprintf(" in chat %s", params.Chat)
 		}
 
-		return &mcp.CallToolResult{
-			Content: []mcp.Content{
-				mcp.NewTextContent(string(content)),
-			},
-		}, nil
+		return mcp.NewToolResultStructured(result, fallbackText), nil
 	}
 }
