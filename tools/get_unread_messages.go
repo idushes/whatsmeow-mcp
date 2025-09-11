@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"whatsmeow-mcp/internal/client"
 	"whatsmeow-mcp/internal/types"
 
@@ -53,18 +52,8 @@ func HandleGetUnreadMessages(whatsappClient client.WhatsAppClientInterface) func
 			params.Count = 100
 		}
 
-		// Retrieve unread messages
-		allUnreadMessages := whatsappClient.GetUnreadMessages(params.Chat, params.Count)
-
-		// Filter out empty messages
-		var unreadMessages []types.Message
-		for _, msg := range allUnreadMessages {
-			// Skip messages with empty text content and no meaningful data
-			// Only include messages that have actual text content
-			if msg.Text != "" && len(strings.TrimSpace(msg.Text)) > 0 {
-				unreadMessages = append(unreadMessages, msg)
-			}
-		}
+		// Retrieve unread messages (now filtered at database level)
+		unreadMessages := whatsappClient.GetUnreadMessages(params.Chat, params.Count)
 
 		result := types.UnreadMessagesResponse{
 			Messages: unreadMessages,

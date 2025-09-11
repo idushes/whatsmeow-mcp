@@ -178,7 +178,7 @@ func (ms *MessageStore) GetChatMessages(ctx context.Context, ourJID, chatJID str
 			FROM messages 
 			WHERE our_jid = $1 AND chat_jid = $2 AND timestamp < (
 				SELECT timestamp FROM messages WHERE id = $3 AND our_jid = $1
-			)
+			) AND message_text IS NOT NULL AND TRIM(message_text) != ''
 			ORDER BY timestamp DESC 
 			LIMIT $4
 		`
@@ -188,7 +188,7 @@ func (ms *MessageStore) GetChatMessages(ctx context.Context, ourJID, chatJID str
 		query = `
 			SELECT id, sender_jid, recipient_jid, message_text, timestamp, quoted_message_id
 			FROM messages 
-			WHERE our_jid = $1 AND chat_jid = $2
+			WHERE our_jid = $1 AND chat_jid = $2 AND message_text IS NOT NULL AND TRIM(message_text) != ''
 			ORDER BY timestamp DESC 
 			LIMIT $3
 		`
@@ -349,7 +349,7 @@ func (ms *MessageStore) GetUnreadMessages(ctx context.Context, ourJID string, ch
 		query = `
 			SELECT id, sender_jid, recipient_jid, message_text, timestamp, quoted_message_id, chat_jid
 			FROM messages 
-			WHERE our_jid = $1 AND chat_jid = $2 AND is_read = false
+			WHERE our_jid = $1 AND chat_jid = $2 AND is_read = false AND message_text IS NOT NULL AND TRIM(message_text) != ''
 			ORDER BY timestamp DESC 
 			LIMIT $3
 		`
@@ -359,7 +359,7 @@ func (ms *MessageStore) GetUnreadMessages(ctx context.Context, ourJID string, ch
 		query = `
 			SELECT id, sender_jid, recipient_jid, message_text, timestamp, quoted_message_id, chat_jid
 			FROM messages 
-			WHERE our_jid = $1 AND is_read = false
+			WHERE our_jid = $1 AND is_read = false AND message_text IS NOT NULL AND TRIM(message_text) != ''
 			ORDER BY timestamp DESC 
 			LIMIT $2
 		`
