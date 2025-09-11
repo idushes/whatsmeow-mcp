@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"whatsmeow-mcp/internal/client"
 	"whatsmeow-mcp/internal/types"
 
@@ -69,11 +70,21 @@ func HandleGetChatHistory(whatsappClient client.WhatsAppClientInterface) func(ct
 		}
 
 		// Retrieve messages for the specific chat
-		chatMessages := whatsappClient.GetChatMessages(params.Chat, params.Count, params.BeforeMessageID)
+		allChatMessages := whatsappClient.GetChatMessages(params.Chat, params.Count, params.BeforeMessageID)
 
-		// For now, we'll determine hasMore by checking if we got the full requested count
+		// Filter out empty messages
+		var chatMessages []types.Message
+		for _, msg := range allChatMessages {
+			// Skip messages with empty text content and no meaningful data
+			// Only include messages that have actual text content
+			if msg.Text != "" && len(strings.TrimSpace(msg.Text)) > 0 {
+				chatMessages = append(chatMessages, msg)
+			}
+		}
+
+		// For now, we'll determine hasMore by checking if we got the full requested count from the original list
 		// In a more sophisticated implementation, we could add a method to get total count
-		hasMore := len(chatMessages) == params.Count
+		hasMore := len(allChatMessages) == params.Count
 
 		result := types.ChatHistoryResponse{
 			Messages: chatMessages,
