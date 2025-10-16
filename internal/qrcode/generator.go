@@ -48,7 +48,8 @@ func (g *QRCodeGenerator) GenerateQRCode(content string) (string, error) {
 	}
 
 	// Return URL to access the image
-	imageURL := fmt.Sprintf("%s/static/%s", g.baseURL, filename)
+	// baseURL already includes the full path (e.g., http://localhost:6679/static)
+	imageURL := fmt.Sprintf("%s/%s", g.baseURL, filename)
 
 	// Schedule cleanup after 5 minutes
 	go g.scheduleCleanup(filePath, 5*time.Minute)
@@ -135,4 +136,3 @@ func (g *QRCodeGenerator) StartPeriodicCleanup(interval, maxAge time.Duration) {
 		}
 	}()
 }
-

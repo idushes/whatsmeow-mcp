@@ -29,6 +29,7 @@ type Config struct {
 	ServerName    string
 	ServerVersion string
 	LogLevel      string
+	StaticURL     string // Base URL for static files
 
 	// Database configuration
 	DatabaseURL string
@@ -138,6 +139,14 @@ func loadConfig() *Config {
 		config.LogLevel = level
 	}
 
+	// Static URL configuration
+	if staticURL := os.Getenv("STATIC_URL"); staticURL != "" {
+		config.StaticURL = staticURL
+	} else {
+		// Default to http://HOST:REST_PORT/static
+		config.StaticURL = fmt.Sprintf("http://%s:%d/static", config.Host, config.RESTPort)
+	}
+
 	// Database configuration
 	if databaseURL := os.Getenv("DATABASE_URL"); databaseURL != "" {
 		config.DatabaseURL = databaseURL
@@ -166,6 +175,7 @@ func main() {
 
 	log.Printf("Starting %s v%s - WhatsApp MCP Server", config.ServerName, config.ServerVersion)
 	log.Printf("Configuration: Host=%s, MCP_PORT=%d, REST_PORT=%d, LogLevel=%s", config.Host, config.MCPPort, config.RESTPort, config.LogLevel)
+	log.Printf("Static URL: %s", config.StaticURL)
 	log.Printf("Database URL: %s", maskDatabaseURL(config.DatabaseURL))
 
 	// Create database if it doesn't exist
@@ -182,8 +192,7 @@ func main() {
 
 	// Initialize QR code generator
 	staticDir := filepath.Join(".", "static")
-	baseURL := fmt.Sprintf("http://%s:%d", config.Host, config.RESTPort)
-	qrGenerator := qrcode.NewQRCodeGenerator(staticDir, baseURL)
+	qrGenerator := qrcode.NewQRCodeGenerator(staticDir, config.StaticURL)
 
 	// Note: QR code cleanup can be implemented as a separate goroutine if needed
 
@@ -249,6 +258,7 @@ func main() {
 		log.Printf("Starting MCP server in Streamable HTTP mode")
 		log.Printf("MCP endpoint will be available at: http://%s:%d/mcp", config.Host, config.MCPPort)
 		log.Printf("Static files endpoint will be available at: http://%s:%d/static/", config.Host, config.RESTPort)
+		log.Printf("Static files base URL: %s/", config.StaticURL)
 		log.Printf("Health endpoints available at: http://%s:%d/health/*", config.Host, config.RESTPort)
 		log.Println("This mode allows HTTP-based communication with the MCP server using the new Streamable HTTP transport")
 
