@@ -2,6 +2,7 @@ package qrcode
 
 import (
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"os"
@@ -15,6 +16,12 @@ import (
 type QRCodeGenerator struct {
 	staticDir string
 	baseURL   string
+}
+
+// QRCodeResult contains both URL and base64 encoded QR code
+type QRCodeResult struct {
+	ImageURL string // URL to access the QR code image
+	Base64   string // Base64 encoded PNG image
 }
 
 // NewQRCodeGenerator creates a new QR code generator
@@ -55,6 +62,49 @@ func (g *QRCodeGenerator) GenerateQRCode(content string) (string, error) {
 	go g.scheduleCleanup(filePath, 5*time.Minute)
 
 	return imageURL, nil
+}
+
+// GenerateQRCodeWithBase64 generates a QR code image and returns both URL and base64
+func (g *QRCodeGenerator) GenerateQRCodeWithBase64(content string) (*QRCodeResult, error) {
+	// Ensure static directory exists
+	if err := os.MkdirAll(g.staticDir, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create static directory: %w", err)
+	}
+
+	// Generate QR code as PNG bytes
+	pngBytes, err := qrcode.Encode(content, qrcode.Medium, 256)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate QR code: %w", err)
+	}
+
+	// Encode to base64
+	base64String := base64.StdEncoding.EncodeToString(pngBytes)
+
+	// Generate unique filename
+	filename, err := g.generateUniqueFilename()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate unique filename: %w", err)
+	}
+
+	// Full path to the image file
+	filePath := filepath.Join(g.staticDir, filename)
+
+	// Write PNG bytes to file
+	if err := os.WriteFile(filePath, pngBytes, 0644); err != nil {
+		return nil, fmt.Errorf("failed to write QR code file: %w", err)
+	}
+
+	// Return URL to access the image
+	// baseURL already includes the full path (e.g., http://localhost:6679/static)
+	imageURL := fmt.Sprintf("%s/%s", g.baseURL, filename)
+
+	// Schedule cleanup after 5 minutes
+	go g.scheduleCleanup(filePath, 5*time.Minute)
+
+	return &QRCodeResult{
+		ImageURL: imageURL,
+		Base64:   base64String,
+	}, nil
 }
 
 // generateUniqueFilename creates a unique filename for the QR code image

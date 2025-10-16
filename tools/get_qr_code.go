@@ -24,8 +24,8 @@ func HandleGetQRCode(whatsappClient client.WhatsAppClientInterface, qrGenerator 
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		qrCode := whatsappClient.GetQRCode()
 
-		// Generate QR code image
-		imageURL, err := qrGenerator.GenerateQRCode(qrCode)
+		// Generate QR code image with base64
+		qrResult, err := qrGenerator.GenerateQRCodeWithBase64(qrCode)
 		if err != nil {
 			errorResult := types.StandardResponse{
 				Success: false,
@@ -43,17 +43,18 @@ func HandleGetQRCode(whatsappClient client.WhatsAppClientInterface, qrGenerator 
 		result := types.QRCodeResponse{
 			QRCode:    qrCode,
 			Code:      qrCode,
-			ImageURL:  imageURL,
+			ImageURL:  qrResult.ImageURL,
 			Timeout:   30,
 			Success:   true,
 			ExpiresAt: expiresAt,
 		}
 
-		// Create content with text and resource link
+		// Create content with text, image, and resource link
 		content := []mcp.Content{
 			mcp.NewTextContent("QR code generated successfully. Expires in 30 seconds. Scan with WhatsApp to login."),
+			mcp.NewImageContent(qrResult.Base64, "image/png"),
 			mcp.NewResourceLink(
-				imageURL,
+				qrResult.ImageURL,
 				"WhatsApp QR Code",
 				"Scan this QR code with WhatsApp to login",
 				"image/png",
