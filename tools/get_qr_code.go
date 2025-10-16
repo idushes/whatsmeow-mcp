@@ -49,10 +49,21 @@ func HandleGetQRCode(whatsappClient client.WhatsAppClientInterface, qrGenerator 
 			ExpiresAt: expiresAt,
 		}
 
-		// QR code expires after 30 seconds (handled automatically by whatsmeow)
-		// Create fallback text for backward compatibility
-		fallbackText := "QR code generated successfully. Expires in 30 seconds. Scan with WhatsApp to login."
+		// Create content with text and resource link
+		content := []mcp.Content{
+			mcp.NewTextContent("QR code generated successfully. Expires in 30 seconds. Scan with WhatsApp to login."),
+			mcp.NewResourceLink(
+				imageURL,
+				"WhatsApp QR Code",
+				"Scan this QR code with WhatsApp to login",
+				"image/png",
+			),
+		}
 
-		return mcp.NewToolResultStructured(result, fallbackText), nil
+		return &mcp.CallToolResult{
+			Content:           content,
+			StructuredContent: result,
+			IsError:           false,
+		}, nil
 	}
 }
