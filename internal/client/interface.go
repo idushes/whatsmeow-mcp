@@ -1,6 +1,9 @@
 package client
 
-import "whatsmeow-mcp/internal/types"
+import (
+	"context"
+	"whatsmeow-mcp/internal/types"
+)
 
 // WhatsAppClientInterface defines the interface that all WhatsApp clients must implement
 type WhatsAppClientInterface interface {
@@ -10,7 +13,7 @@ type WhatsAppClientInterface interface {
 	Connect() error
 
 	// Message methods
-	SendMessage(to, text, quotedMessageID string) (*types.MessageResponse, error)
+	SendMessage(ctx context.Context, to, text, quotedMessageID string) (*types.MessageResponse, error)
 	GetChatMessages(chatJID string, count int, beforeMessageID string) []types.Message
 	GetUnreadMessages(chatJID string, count int) []types.Message
 	GetAllMessages() []types.Message
@@ -19,4 +22,7 @@ type WhatsAppClientInterface interface {
 
 	// Contact methods
 	IsOnWhatsApp(phones []string) ([]types.WhatsAppCheckResult, error)
+
+	// Subscription methods
+	GetSubscriptionManager() *SubscriptionManager
 }

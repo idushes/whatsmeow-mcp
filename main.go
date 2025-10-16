@@ -225,6 +225,11 @@ func main() {
 		server.WithInstructions("WhatsApp MCP Server - Provides WhatsApp functionality through standardized MCP tools. Enables AI agents and applications to send messages, check authentication status, verify phone numbers, retrieve chat history, and manage WhatsApp Web login via QR codes."),
 	)
 
+	// Create subscription manager and attach to WhatsApp client
+	subscriptionManager := client.NewSubscriptionManager(mcpServer)
+	whatsappClient.SetSubscriptionManager(subscriptionManager)
+	log.Println("Subscription manager initialized for MCP notifications")
+
 	// Register all WhatsApp tools
 	tools.RegisterAllTools(mcpServer, whatsappClient, qrGenerator)
 

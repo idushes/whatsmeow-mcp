@@ -11,6 +11,7 @@ import (
 	"whatsmeow-mcp/internal/database"
 	"whatsmeow-mcp/internal/types"
 
+	"github.com/mark3labs/mcp-go/server"
 	"go.mau.fi/whatsmeow"
 	waProto "go.mau.fi/whatsmeow/binary/proto"
 	"go.mau.fi/whatsmeow/store/sqlstore"
@@ -40,6 +41,9 @@ type WhatsmeowClient struct {
 
 	// Our JID for database operations
 	ourJID string
+
+	// Subscription manager for MCP notifications
+	subscriptionManager *SubscriptionManager
 }
 
 // Ensure WhatsmeowClient implements WhatsAppClientInterface
@@ -175,6 +179,17 @@ func (wc *WhatsmeowClient) handleMessage(evt *events.Message) {
 		}
 	}
 
+	// Send MCP notification to subscribed sessions
+	if wc.subscriptionManager != nil {
+		wc.subscriptionManager.NotifyNewMessage(
+			message.Chat,
+			message.ID,
+			message.From,
+			message.Text,
+			message.Timestamp,
+		)
+	}
+
 	log.Printf("Received message from %s: %s", message.From, message.Text)
 }
 
@@ -300,8 +315,19 @@ func (wc *WhatsmeowClient) GetQRCode() string {
 	}
 }
 
+// SetSubscriptionManager sets the subscription manager for the client
+func (wc *WhatsmeowClient) SetSubscriptionManager(sm *SubscriptionManager) {
+	wc.subscriptionManager = sm
+}
+
+// GetSubscriptionManager returns the subscription manager
+func (wc *WhatsmeowClient) GetSubscriptionManager() *SubscriptionManager {
+	return wc.subscriptionManager
+}
+
 // SendMessage sends a text message to the specified recipient
-func (wc *WhatsmeowClient) SendMessage(to, text, quotedMessageID string) (*types.MessageResponse, error) {
+// Automatically subscribes the caller's MCP session to messages from this chat
+func (wc *WhatsmeowClient) SendMessage(ctx context.Context, to, text, quotedMessageID string) (*types.MessageResponse, error) {
 	if !wc.IsLoggedIn() {
 		return nil, fmt.Errorf("not logged in")
 	}
@@ -332,6 +358,18 @@ func (wc *WhatsmeowClient) SendMessage(to, text, quotedMessageID string) (*types
 	resp, err := wc.client.SendMessage(context.Background(), jid, msg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send message: %w", err)
+	}
+
+	// Auto-subscribe session to this chat (extract sessionID from context)
+	if wc.subscriptionManager != nil {
+		session := server.ClientSessionFromContext(ctx)
+		if session != nil {
+			sessionID := session.SessionID()
+			isNew := wc.subscriptionManager.Subscribe(sessionID, to)
+			if isNew {
+				log.Printf("Auto-subscribed session %s to chat %s", sessionID, to)
+			}
+		}
 	}
 
 	// Create response

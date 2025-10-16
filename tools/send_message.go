@@ -13,7 +13,7 @@ import (
 // SendMessageTool creates and returns the send_message MCP tool
 func SendMessageTool(whatsappClient client.WhatsAppClientInterface) mcp.Tool {
 	tool := mcp.NewTool("send_message",
-		mcp.WithDescription("Send a text message to a WhatsApp chat or contact. Requires authentication."),
+		mcp.WithDescription("Send a text message to a WhatsApp chat or contact. Requires authentication. IMPORTANT: When you send a message to a contact, your session will be automatically subscribed to receive real-time MCP notifications for all incoming messages from that contact. This means you'll receive 'notifications/message' events whenever the contact replies or sends new messages. Subscriptions are maintained per MCP session and prevent duplicate notifications."),
 		mcp.WithString("to",
 			mcp.Required(),
 			mcp.Description("WhatsApp JID (recipient identifier) in format 'phonenumber@s.whatsapp.net' (e.g., '1234567890@s.whatsapp.net') or group JID ending with '@g.us'"),
@@ -71,8 +71,8 @@ func HandleSendMessage(whatsappClient client.WhatsAppClientInterface) func(ctx c
 			return mcp.NewToolResultStructured(result, "Missing required parameters: 'to' and 'text'"), nil
 		}
 
-		// Send message using client interface
-		response, err := whatsappClient.SendMessage(params.To, params.Text, params.QuotedMessageID)
+		// Send message using client interface (context contains session for auto-subscription)
+		response, err := whatsappClient.SendMessage(ctx, params.To, params.Text, params.QuotedMessageID)
 		if err != nil {
 			result := types.StandardResponse{
 				Success: false,
@@ -88,7 +88,7 @@ func HandleSendMessage(whatsappClient client.WhatsAppClientInterface) func(ctx c
 		result := response
 
 		// Create fallback text for backward compatibility
-		fallbackText := fmt.Sprintf("Message sent successfully to %s", params.To)
+		fallbackText := fmt.Sprintf("Message sent successfully to %s. You are now subscribed to notifications from this chat.", params.To)
 
 		return mcp.NewToolResultStructured(result, fallbackText), nil
 	}
